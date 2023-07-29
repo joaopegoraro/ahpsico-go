@@ -20,7 +20,7 @@ VALUES (?, ?, ?) RETURNING *;
 
 UPDATE patients
 SET
-    name = COALESCE(sqlc.narg ('name'), title),
+    name = COALESCE(sqlc.narg ('name'), name),
     updated_at = CURRENT_TIMESTAMP
 WHERE
     uuid = sqlc.arg('uuid') RETURNING *;

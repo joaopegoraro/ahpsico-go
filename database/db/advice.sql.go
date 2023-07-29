@@ -69,13 +69,23 @@ func (q *Queries) ListDoctorAdvices(ctx context.Context, doctorUuid uuid.UUID) (
 	return items, nil
 }
 
-const listPatientAdvices = `-- name: ListPatientAdvices :many
+const listPatientAdvicesFromDoctor = `-- name: ListPatientAdvicesFromDoctor :many
 
-SELECT id, message, doctor_uuid, created_at FROM advices WHERE doctor_uuid = ?
+SELECT advices.id, advices.message, advices.doctor_uuid, advices.created_at
+FROM advices
+    JOIN advice_with_patient ON advice.id = advice_with_patient.advice_id
+WHERE
+    advice_with_patient.patient_uuid = ?
+    AND advices.doctor_uuid = ?
 `
 
-func (q *Queries) ListPatientAdvices(ctx context.Context, doctorUuid uuid.UUID) ([]Advice, error) {
-	rows, err := q.db.QueryContext(ctx, listPatientAdvices, doctorUuid)
+type ListPatientAdvicesFromDoctorParams struct {
+	PatientUuid uuid.UUID
+	DoctorUuid  uuid.UUID
+}
+
+func (q *Queries) ListPatientAdvicesFromDoctor(ctx context.Context, arg ListPatientAdvicesFromDoctorParams) ([]Advice, error) {
+	rows, err := q.db.QueryContext(ctx, listPatientAdvicesFromDoctor, arg.PatientUuid, arg.DoctorUuid)
 	if err != nil {
 		return nil, err
 	}

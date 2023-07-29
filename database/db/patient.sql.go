@@ -108,7 +108,7 @@ const updatePatient = `-- name: UpdatePatient :one
 
 UPDATE patients
 SET
-    name = COALESCE(?1, title),
+    name = COALESCE(?1, name),
     updated_at = CURRENT_TIMESTAMP
 WHERE
     uuid = ?2 RETURNING uuid, name, phone_number, created_at, updated_at

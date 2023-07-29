@@ -140,16 +140,16 @@ const updateDoctor = `-- name: UpdateDoctor :one
 
 UPDATE doctors
 SET
-    name = COALESCE(?1, title),
+    name = COALESCE(?1, name),
     description = COALESCE(
         ?2,
-        title
+        description
     ),
-    crp = COALESCE(?3, title),
-    pix_key = COALESCE(?4, title),
+    crp = COALESCE(?3, crp),
+    pix_key = COALESCE(?4, pix_key),
     payment_details = COALESCE(
         ?5,
-        title
+        payment_details
     ),
     updated_at = CURRENT_TIMESTAMP
 WHERE

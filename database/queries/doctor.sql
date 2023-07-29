@@ -28,16 +28,16 @@ VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;
 
 UPDATE doctors
 SET
-    name = COALESCE(sqlc.narg ('name'), title),
+    name = COALESCE(sqlc.narg ('name'), name),
     description = COALESCE(
         sqlc.narg ('description'),
-        title
+        description
     ),
-    crp = COALESCE(sqlc.narg ('crp'), title),
-    pix_key = COALESCE(sqlc.narg ('pix_key'), title),
+    crp = COALESCE(sqlc.narg ('crp'), crp),
+    pix_key = COALESCE(sqlc.narg ('pix_key'), pix_key),
     payment_details = COALESCE(
         sqlc.narg ('payment_details'),
-        title
+        payment_details
     ),
     updated_at = CURRENT_TIMESTAMP
 WHERE
