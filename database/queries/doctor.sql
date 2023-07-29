@@ -4,7 +4,15 @@ SELECT * FROM doctors WHERE uuid = ? LIMIT 1;
 
 -- name: ListDoctors :many
 
-SELECT * FROM doctors ORDER BY name;
+SELECT * FROM doctors;
+
+-- name: ListPatientDoctors :many
+
+SELECT doctors.*
+FROM doctors
+    JOIN patient_with_doctor ON doctors.uuid = patient_with_doctor.doctor_uuid
+WHERE
+    patient_with_doctor.patient_uuid = ?;
 
 -- name: CreateDoctor :one
 

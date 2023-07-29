@@ -17,3 +17,15 @@ type Doctor struct {
 	PixKey         string
 	PaymentDetails string
 }
+
+type Patient struct {
+	Uuid        uuid.UUID
+	Name        string
+	PhoneNumber string
+}
+
+type PatientWithDoctor struct {
+	ID          int64
+	PatientUuid uuid.UUID
+	DoctorUuid  uuid.UUID
+}

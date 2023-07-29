@@ -92,11 +92,51 @@ func (q *Queries) GetDoctor(ctx context.Context, argUuid uuid.UUID) (Doctor, err
 
 const listDoctors = `-- name: ListDoctors :many
 
-SELECT uuid, name, phone_number, description, crp, pix_key, payment_details FROM doctors ORDER BY name
+SELECT uuid, name, phone_number, description, crp, pix_key, payment_details FROM doctors
 `
 
 func (q *Queries) ListDoctors(ctx context.Context) ([]Doctor, error) {
 	rows, err := q.db.QueryContext(ctx, listDoctors)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Doctor
+	for rows.Next() {
+		var i Doctor
+		if err := rows.Scan(
+			&i.Uuid,
+			&i.Name,
+			&i.PhoneNumber,
+			&i.Description,
+			&i.Crp,
+			&i.PixKey,
+			&i.PaymentDetails,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPatientDoctors = `-- name: ListPatientDoctors :many
+
+SELECT doctors.uuid, doctors.name, doctors.phone_number, doctors.description, doctors.crp, doctors.pix_key, doctors.payment_details
+FROM doctors
+    JOIN patient_with_doctor ON doctors.uuid = patient_with_doctor.doctor_uuid
+WHERE
+    patient_with_doctor.patient_uuid = ?
+`
+
+func (q *Queries) ListPatientDoctors(ctx context.Context, patientUuid uuid.UUID) ([]Doctor, error) {
+	rows, err := q.db.QueryContext(ctx, listPatientDoctors, patientUuid)
 	if err != nil {
 		return nil, err
 	}

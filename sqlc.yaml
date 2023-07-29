@@ -8,5 +8,5 @@ sql:
         package: "db"
         out: "database/db"
         overrides:
-          - column: "*.uuid"
+          - column: "*.*uuid"
             go_type: "github.com/gofrs/uuid.UUID"
