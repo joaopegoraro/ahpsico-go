@@ -10,7 +10,9 @@ CREATE TABLE
         description TEXT DEFAULT '' NOT NULL UNIQUE,
         crp TEXT DEFAULT '' NOT NULL UNIQUE,
         pix_key TEXT DEFAULT '' NOT NULL UNIQUE,
-        payment_details TEXT DEFAULT '' NOT NULL UNIQUE
+        payment_details TEXT DEFAULT '' NOT NULL UNIQUE,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME
     );
 
 -- +goose StatementEnd

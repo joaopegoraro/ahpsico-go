@@ -5,8 +5,25 @@
 package db
 
 import (
+	"database/sql"
+	"time"
+
 	"github.com/gofrs/uuid"
 )
+
+type Advice struct {
+	ID         int64
+	Message    string
+	DoctorUuid uuid.UUID
+	CreatedAt  time.Time
+}
+
+type AdviceWithPatient struct {
+	ID          int64
+	AdviceID    int64
+	PatientUuid uuid.UUID
+	CreatedAt   time.Time
+}
 
 type Doctor struct {
 	Uuid           uuid.UUID
@@ -16,6 +33,8 @@ type Doctor struct {
 	Crp            string
 	PixKey         string
 	PaymentDetails string
+	CreatedAt      time.Time
+	UpdatedAt      sql.NullTime
 }
 
 type Invite struct {
@@ -23,16 +42,19 @@ type Invite struct {
 	PhoneNumber string
 	PatientUuid uuid.UUID
 	DoctorUuid  uuid.UUID
+	CreatedAt   time.Time
 }
 
 type Patient struct {
 	Uuid        uuid.UUID
 	Name        string
 	PhoneNumber string
+	CreatedAt   time.Time
+	UpdatedAt   sql.NullTime
 }
 
 type PatientWithDoctor struct {
-	ID          int64
 	PatientUuid uuid.UUID
 	DoctorUuid  uuid.UUID
+	CreatedAt   time.Time
 }

@@ -24,7 +24,7 @@ INSERT INTO
         pix_key,
         payment_details
     )
-VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING uuid, name, phone_number, description, crp, pix_key, payment_details
+VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING uuid, name, phone_number, description, crp, pix_key, payment_details, created_at, updated_at
 `
 
 type CreateDoctorParams struct {
@@ -56,6 +56,8 @@ func (q *Queries) CreateDoctor(ctx context.Context, arg CreateDoctorParams) (Doc
 		&i.Crp,
 		&i.PixKey,
 		&i.PaymentDetails,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -72,7 +74,7 @@ func (q *Queries) DeleteDoctor(ctx context.Context, argUuid uuid.UUID) error {
 
 const getDoctor = `-- name: GetDoctor :one
 
-SELECT uuid, name, phone_number, description, crp, pix_key, payment_details FROM doctors WHERE uuid = ? LIMIT 1
+SELECT uuid, name, phone_number, description, crp, pix_key, payment_details, created_at, updated_at FROM doctors WHERE uuid = ? LIMIT 1
 `
 
 func (q *Queries) GetDoctor(ctx context.Context, argUuid uuid.UUID) (Doctor, error) {
@@ -86,13 +88,15 @@ func (q *Queries) GetDoctor(ctx context.Context, argUuid uuid.UUID) (Doctor, err
 		&i.Crp,
 		&i.PixKey,
 		&i.PaymentDetails,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const listPatientDoctors = `-- name: ListPatientDoctors :many
 
-SELECT doctors.uuid, doctors.name, doctors.phone_number, doctors.description, doctors.crp, doctors.pix_key, doctors.payment_details
+SELECT doctors.uuid, doctors.name, doctors.phone_number, doctors.description, doctors.crp, doctors.pix_key, doctors.payment_details, doctors.created_at, doctors.updated_at
 FROM doctors
     JOIN patient_with_doctor ON doctors.uuid = patient_with_doctor.doctor_uuid
 WHERE
@@ -116,6 +120,8 @@ func (q *Queries) ListPatientDoctors(ctx context.Context, patientUuid uuid.UUID)
 			&i.Crp,
 			&i.PixKey,
 			&i.PaymentDetails,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -144,9 +150,10 @@ SET
     payment_details = COALESCE(
         ?5,
         title
-    )
+    ),
+    updated_at = CURRENT_TIMESTAMP
 WHERE
-    uuid = ?6 RETURNING uuid, name, phone_number, description, crp, pix_key, payment_details
+    uuid = ?6 RETURNING uuid, name, phone_number, description, crp, pix_key, payment_details, created_at, updated_at
 `
 
 type UpdateDoctorParams struct {
@@ -176,6 +183,8 @@ func (q *Queries) UpdateDoctor(ctx context.Context, arg UpdateDoctorParams) (Doc
 		&i.Crp,
 		&i.PixKey,
 		&i.PaymentDetails,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

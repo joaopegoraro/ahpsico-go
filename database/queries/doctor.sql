@@ -38,7 +38,8 @@ SET
     payment_details = COALESCE(
         sqlc.narg ('payment_details'),
         title
-    )
+    ),
+    updated_at = CURRENT_TIMESTAMP
 WHERE
     uuid = sqlc.arg('uuid') RETURNING *;
 

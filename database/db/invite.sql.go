@@ -19,7 +19,7 @@ INSERT INTO
         doctor_uuid,
         patient_uuid
     )
-VALUES (?, ?, ?) RETURNING id, phone_number, patient_uuid, doctor_uuid
+VALUES (?, ?, ?) RETURNING id, phone_number, patient_uuid, doctor_uuid, created_at
 `
 
 type CreateInviteParams struct {
@@ -36,6 +36,7 @@ func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (Inv
 		&i.PhoneNumber,
 		&i.PatientUuid,
 		&i.DoctorUuid,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -52,7 +53,7 @@ func (q *Queries) DeleteInvite(ctx context.Context, id int64) error {
 
 const listDoctorInvites = `-- name: ListDoctorInvites :many
 
-SELECT id, phone_number, patient_uuid, doctor_uuid FROM invites WHERE doctor_uuid = ?
+SELECT id, phone_number, patient_uuid, doctor_uuid, created_at FROM invites WHERE doctor_uuid = ?
 `
 
 func (q *Queries) ListDoctorInvites(ctx context.Context, doctorUuid uuid.UUID) ([]Invite, error) {
@@ -69,6 +70,7 @@ func (q *Queries) ListDoctorInvites(ctx context.Context, doctorUuid uuid.UUID) (
 			&i.PhoneNumber,
 			&i.PatientUuid,
 			&i.DoctorUuid,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -85,7 +87,7 @@ func (q *Queries) ListDoctorInvites(ctx context.Context, doctorUuid uuid.UUID) (
 
 const listDoctorInvitesWithPhoneNumber = `-- name: ListDoctorInvitesWithPhoneNumber :many
 
-SELECT id, phone_number, patient_uuid, doctor_uuid
+SELECT id, phone_number, patient_uuid, doctor_uuid, created_at
 FROM invites
 WHERE
     doctor_uuid = ?
@@ -111,6 +113,7 @@ func (q *Queries) ListDoctorInvitesWithPhoneNumber(ctx context.Context, arg List
 			&i.PhoneNumber,
 			&i.PatientUuid,
 			&i.DoctorUuid,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -127,7 +130,7 @@ func (q *Queries) ListDoctorInvitesWithPhoneNumber(ctx context.Context, arg List
 
 const listPatientInvites = `-- name: ListPatientInvites :many
 
-SELECT id, phone_number, patient_uuid, doctor_uuid FROM invites WHERE patient_uuid = ?
+SELECT id, phone_number, patient_uuid, doctor_uuid, created_at FROM invites WHERE patient_uuid = ?
 `
 
 func (q *Queries) ListPatientInvites(ctx context.Context, patientUuid uuid.UUID) ([]Invite, error) {
@@ -144,6 +147,7 @@ func (q *Queries) ListPatientInvites(ctx context.Context, patientUuid uuid.UUID)
 			&i.PhoneNumber,
 			&i.PatientUuid,
 			&i.DoctorUuid,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

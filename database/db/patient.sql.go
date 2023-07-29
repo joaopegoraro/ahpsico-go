@@ -16,7 +16,7 @@ const createPatient = `-- name: CreatePatient :one
 
 INSERT INTO
     patients (uuid, name, phone_number)
-VALUES (?, ?, ?) RETURNING uuid, name, phone_number
+VALUES (?, ?, ?) RETURNING uuid, name, phone_number, created_at, updated_at
 `
 
 type CreatePatientParams struct {
@@ -28,7 +28,13 @@ type CreatePatientParams struct {
 func (q *Queries) CreatePatient(ctx context.Context, arg CreatePatientParams) (Patient, error) {
 	row := q.db.QueryRowContext(ctx, createPatient, arg.Uuid, arg.Name, arg.PhoneNumber)
 	var i Patient
-	err := row.Scan(&i.Uuid, &i.Name, &i.PhoneNumber)
+	err := row.Scan(
+		&i.Uuid,
+		&i.Name,
+		&i.PhoneNumber,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
@@ -44,19 +50,25 @@ func (q *Queries) DeletePatient(ctx context.Context, argUuid uuid.UUID) error {
 
 const getPatient = `-- name: GetPatient :one
 
-SELECT uuid, name, phone_number FROM patients WHERE uuid = ? LIMIT 1
+SELECT uuid, name, phone_number, created_at, updated_at FROM patients WHERE uuid = ? LIMIT 1
 `
 
 func (q *Queries) GetPatient(ctx context.Context, argUuid uuid.UUID) (Patient, error) {
 	row := q.db.QueryRowContext(ctx, getPatient, argUuid)
 	var i Patient
-	err := row.Scan(&i.Uuid, &i.Name, &i.PhoneNumber)
+	err := row.Scan(
+		&i.Uuid,
+		&i.Name,
+		&i.PhoneNumber,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
 const listDoctorPatients = `-- name: ListDoctorPatients :many
 
-SELECT patients.uuid, patients.name, patients.phone_number
+SELECT patients.uuid, patients.name, patients.phone_number, patients.created_at, patients.updated_at
 FROM patients
     JOIN patient_with_doctor ON patients.uuid = patient_with_doctor.patient_uuid
 WHERE
@@ -72,7 +84,13 @@ func (q *Queries) ListDoctorPatients(ctx context.Context, doctorUuid uuid.UUID) 
 	var items []Patient
 	for rows.Next() {
 		var i Patient
-		if err := rows.Scan(&i.Uuid, &i.Name, &i.PhoneNumber); err != nil {
+		if err := rows.Scan(
+			&i.Uuid,
+			&i.Name,
+			&i.PhoneNumber,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -90,9 +108,10 @@ const updatePatient = `-- name: UpdatePatient :one
 
 UPDATE patients
 SET
-    name = COALESCE(?1, title)
+    name = COALESCE(?1, title),
+    updated_at = CURRENT_TIMESTAMP
 WHERE
-    uuid = ?2 RETURNING uuid, name, phone_number
+    uuid = ?2 RETURNING uuid, name, phone_number, created_at, updated_at
 `
 
 type UpdatePatientParams struct {
@@ -103,6 +122,12 @@ type UpdatePatientParams struct {
 func (q *Queries) UpdatePatient(ctx context.Context, arg UpdatePatientParams) (Patient, error) {
 	row := q.db.QueryRowContext(ctx, updatePatient, arg.Name, arg.Uuid)
 	var i Patient
-	err := row.Scan(&i.Uuid, &i.Name, &i.PhoneNumber)
+	err := row.Scan(
+		&i.Uuid,
+		&i.Name,
+		&i.PhoneNumber,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
