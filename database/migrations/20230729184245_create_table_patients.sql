@@ -13,7 +13,9 @@ CREATE TABLE
     patient_with_doctor (
         id INTEGER PRIMARY KEY,
         patient_uuid TEXT NOT NULL,
-        doctor_uuid TEXT NOT NULL
+        doctor_uuid TEXT NOT NULL,
+        FOREIGN KEY (patient_uuid) REFERENCES patients (uuid) ON DELETE CASCADE,
+        FOREIGN KEY (doctor_uuid) REFERENCES doctors (uuid) ON DELETE CASCADE
     );
 
 -- +goose StatementEnd

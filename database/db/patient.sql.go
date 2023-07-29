@@ -86,34 +86,6 @@ func (q *Queries) ListDoctorPatients(ctx context.Context, doctorUuid uuid.UUID) 
 	return items, nil
 }
 
-const listPatients = `-- name: ListPatients :many
-
-SELECT uuid, name, phone_number FROM patients
-`
-
-func (q *Queries) ListPatients(ctx context.Context) ([]Patient, error) {
-	rows, err := q.db.QueryContext(ctx, listPatients)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Patient
-	for rows.Next() {
-		var i Patient
-		if err := rows.Scan(&i.Uuid, &i.Name, &i.PhoneNumber); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updatePatient = `-- name: UpdatePatient :one
 
 UPDATE patients

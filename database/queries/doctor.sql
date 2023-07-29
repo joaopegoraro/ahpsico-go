@@ -2,10 +2,6 @@
 
 SELECT * FROM doctors WHERE uuid = ? LIMIT 1;
 
--- name: ListDoctors :many
-
-SELECT * FROM doctors;
-
 -- name: ListPatientDoctors :many
 
 SELECT doctors.*

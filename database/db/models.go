@@ -18,6 +18,13 @@ type Doctor struct {
 	PaymentDetails string
 }
 
+type Invite struct {
+	ID          int64
+	PhoneNumber string
+	PatientUuid uuid.UUID
+	DoctorUuid  uuid.UUID
+}
+
 type Patient struct {
 	Uuid        uuid.UUID
 	Name        string
