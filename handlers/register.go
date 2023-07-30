@@ -12,7 +12,7 @@ import (
 func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 	type request struct {
 		UserName string `json:"name"`
-		IsDoctor bool   `json:"isDoctor"`
+		IsDoctor *bool  `json:"isDoctor"`
 	}
 	type response struct {
 		UserUuid    string `json:"userUuid"`
@@ -34,7 +34,11 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 
 		var newUser request
 		err = s.Decode(w, r, &newUser)
-		if err != nil || strings.TrimSpace(newUser.UserName) == "" {
+		if err != nil {
+			s.RespondErrorStatus(w, r, http.StatusBadRequest)
+			return
+		}
+		if newUser.IsDoctor == nil || strings.TrimSpace(newUser.UserName) == "" {
 			s.RespondErrorStatus(w, r, http.StatusBadRequest)
 			return
 		}
@@ -50,7 +54,7 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		if newUser.IsDoctor {
+		if *newUser.IsDoctor {
 			_, err = s.Queries.CreateDoctor(s.Ctx, db.CreateDoctorParams{
 				Uuid:        userUuid,
 				Name:        newUser.UserName,
@@ -76,7 +80,7 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 			UserUuid:    userUuid.String(),
 			UserName:    newUser.UserName,
 			PhoneNumber: user.PhoneNumber,
-			IsDoctor:    newUser.IsDoctor,
+			IsDoctor:    *newUser.IsDoctor,
 		}
 
 		s.RespondOk(w, r, response)

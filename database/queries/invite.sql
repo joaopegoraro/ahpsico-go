@@ -1,18 +1,58 @@
+-- name: GetInvite :one
+
+SELECT invites.* FROM invites WHERE invites.id = ?;
+
+-- name: GetDoctorInviteByPhoneNumber :one
+
+SELECT invites.*
+FROM invites
+WHERE
+    invites.doctor_uuid = ?
+    AND invites.phone_number = ?;
+
 -- name: ListDoctorInvites :many
 
-SELECT * FROM invites WHERE doctor_uuid = ?;
+SELECT
+    invites.id as invite_id,
+    invites.phone_number as invite_phone_number,
+    invites.patient_uuid as invite_patient_uuid,
+    invites.created_at as invite_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
+FROM invites
+    JOIN doctors on doctors.uuid = invites.doctor_uuid
+WHERE invites.doctor_uuid = ?;
 
 -- name: ListDoctorInvitesWithPhoneNumber :many
 
-SELECT *
+SELECT
+    invites.id as invite_id,
+    invites.phone_number as invite_phone_number,
+    invites.patient_uuid as invite_patient_uuid,
+    invites.created_at as invite_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
 FROM invites
+    JOIN doctors on doctors.uuid = invites.doctor_uuid
 WHERE
-    doctor_uuid = ?
-    AND phone_number = ?;
+    invites.doctor_uuid = ?
+    AND invites.phone_number = ?;
 
 -- name: ListPatientInvites :many
 
-SELECT * FROM invites WHERE patient_uuid = ?;
+SELECT
+    invites.id as invite_id,
+    invites.phone_number as invite_phone_number,
+    invites.patient_uuid as invite_patient_uuid,
+    invites.created_at as invite_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
+FROM invites
+    JOIN doctors on doctors.uuid = invites.doctor_uuid
+WHERE patient_uuid = ?;
 
 -- name: CreateInvite :one
 

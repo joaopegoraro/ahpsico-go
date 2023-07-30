@@ -15,6 +15,11 @@ func InitializeRoutes(s *server.Server) {
 	s.Router.Use(middlewares.Security(s))
 	s.Router.Use(middlewares.Auth(s))
 
-	s.Router.Post("login", handlers.HandleLoginUser(s))
-	s.Router.Post("register", handlers.HandleRegisterUser(s))
+	s.Router.Post("/login", handlers.HandleLoginUser(s))
+	s.Router.Post("/register", handlers.HandleRegisterUser(s))
+
+	s.Router.Get("/invites", handlers.HandleListInvites(s))
+	s.Router.Post("/invites", handlers.HandleCreateInvite(s))
+	s.Router.Delete("/invites/{id}", handlers.HandleDeleteInvite(s))
+	s.Router.Post("/invites/{id}/accept", handlers.HandleAcceptInvite(s))
 }

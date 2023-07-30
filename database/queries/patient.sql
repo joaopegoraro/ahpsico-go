@@ -2,6 +2,10 @@
 
 SELECT * FROM patients WHERE uuid = ? LIMIT 1;
 
+-- name: GetPatientByPhoneNumber :one
+
+SELECT * FROM patients WHERE phone_number = ? LIMIT 1;
+
 -- name: ListDoctorPatients :many
 
 SELECT patients.*
@@ -9,6 +13,15 @@ FROM patients
     JOIN patient_with_doctor ON patients.uuid = patient_with_doctor.patient_uuid
 WHERE
     patient_with_doctor.doctor_uuid = ?;
+
+-- name: ListDoctorPatientsByPhoneNumber :many
+
+SELECT patients.*
+FROM patients
+    JOIN patient_with_doctor ON patients.uuid = patient_with_doctor.patient_uuid
+WHERE
+    patient_with_doctor.doctor_uuid = ?
+    AND patients.phone_number = ?;
 
 -- name: CreatePatient :one
 

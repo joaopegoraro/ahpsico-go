@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/gofrs/uuid"
 )
@@ -51,26 +52,93 @@ func (q *Queries) DeleteInvite(ctx context.Context, id int64) error {
 	return err
 }
 
-const listDoctorInvites = `-- name: ListDoctorInvites :many
+const getDoctorInviteByPhoneNumber = `-- name: GetDoctorInviteByPhoneNumber :one
 
-SELECT id, phone_number, patient_uuid, doctor_uuid, created_at FROM invites WHERE doctor_uuid = ?
+SELECT invites.id, invites.phone_number, invites.patient_uuid, invites.doctor_uuid, invites.created_at
+FROM invites
+WHERE
+    invites.doctor_uuid = ?
+    AND invites.phone_number = ?
 `
 
-func (q *Queries) ListDoctorInvites(ctx context.Context, doctorUuid uuid.UUID) ([]Invite, error) {
+type GetDoctorInviteByPhoneNumberParams struct {
+	DoctorUuid  uuid.UUID
+	PhoneNumber string
+}
+
+func (q *Queries) GetDoctorInviteByPhoneNumber(ctx context.Context, arg GetDoctorInviteByPhoneNumberParams) (Invite, error) {
+	row := q.db.QueryRowContext(ctx, getDoctorInviteByPhoneNumber, arg.DoctorUuid, arg.PhoneNumber)
+	var i Invite
+	err := row.Scan(
+		&i.ID,
+		&i.PhoneNumber,
+		&i.PatientUuid,
+		&i.DoctorUuid,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getInvite = `-- name: GetInvite :one
+
+SELECT invites.id, invites.phone_number, invites.patient_uuid, invites.doctor_uuid, invites.created_at FROM invites WHERE invites.id = ?
+`
+
+func (q *Queries) GetInvite(ctx context.Context, id int64) (Invite, error) {
+	row := q.db.QueryRowContext(ctx, getInvite, id)
+	var i Invite
+	err := row.Scan(
+		&i.ID,
+		&i.PhoneNumber,
+		&i.PatientUuid,
+		&i.DoctorUuid,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listDoctorInvites = `-- name: ListDoctorInvites :many
+
+SELECT
+    invites.id as invite_id,
+    invites.phone_number as invite_phone_number,
+    invites.patient_uuid as invite_patient_uuid,
+    invites.created_at as invite_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
+FROM invites
+    JOIN doctors on doctors.uuid = invites.doctor_uuid
+WHERE invites.doctor_uuid = ?
+`
+
+type ListDoctorInvitesRow struct {
+	InviteID          int64
+	InvitePhoneNumber string
+	InvitePatientUuid uuid.UUID
+	InviteCreatedAt   time.Time
+	DoctorUuid        uuid.UUID
+	DoctorName        string
+	DoctorDescription string
+}
+
+func (q *Queries) ListDoctorInvites(ctx context.Context, doctorUuid uuid.UUID) ([]ListDoctorInvitesRow, error) {
 	rows, err := q.db.QueryContext(ctx, listDoctorInvites, doctorUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Invite
+	var items []ListDoctorInvitesRow
 	for rows.Next() {
-		var i Invite
+		var i ListDoctorInvitesRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.PhoneNumber,
-			&i.PatientUuid,
+			&i.InviteID,
+			&i.InvitePhoneNumber,
+			&i.InvitePatientUuid,
+			&i.InviteCreatedAt,
 			&i.DoctorUuid,
-			&i.CreatedAt,
+			&i.DoctorName,
+			&i.DoctorDescription,
 		); err != nil {
 			return nil, err
 		}
@@ -87,11 +155,19 @@ func (q *Queries) ListDoctorInvites(ctx context.Context, doctorUuid uuid.UUID) (
 
 const listDoctorInvitesWithPhoneNumber = `-- name: ListDoctorInvitesWithPhoneNumber :many
 
-SELECT id, phone_number, patient_uuid, doctor_uuid, created_at
+SELECT
+    invites.id as invite_id,
+    invites.phone_number as invite_phone_number,
+    invites.patient_uuid as invite_patient_uuid,
+    invites.created_at as invite_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
 FROM invites
+    JOIN doctors on doctors.uuid = invites.doctor_uuid
 WHERE
-    doctor_uuid = ?
-    AND phone_number = ?
+    invites.doctor_uuid = ?
+    AND invites.phone_number = ?
 `
 
 type ListDoctorInvitesWithPhoneNumberParams struct {
@@ -99,21 +175,33 @@ type ListDoctorInvitesWithPhoneNumberParams struct {
 	PhoneNumber string
 }
 
-func (q *Queries) ListDoctorInvitesWithPhoneNumber(ctx context.Context, arg ListDoctorInvitesWithPhoneNumberParams) ([]Invite, error) {
+type ListDoctorInvitesWithPhoneNumberRow struct {
+	InviteID          int64
+	InvitePhoneNumber string
+	InvitePatientUuid uuid.UUID
+	InviteCreatedAt   time.Time
+	DoctorUuid        uuid.UUID
+	DoctorName        string
+	DoctorDescription string
+}
+
+func (q *Queries) ListDoctorInvitesWithPhoneNumber(ctx context.Context, arg ListDoctorInvitesWithPhoneNumberParams) ([]ListDoctorInvitesWithPhoneNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, listDoctorInvitesWithPhoneNumber, arg.DoctorUuid, arg.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Invite
+	var items []ListDoctorInvitesWithPhoneNumberRow
 	for rows.Next() {
-		var i Invite
+		var i ListDoctorInvitesWithPhoneNumberRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.PhoneNumber,
-			&i.PatientUuid,
+			&i.InviteID,
+			&i.InvitePhoneNumber,
+			&i.InvitePatientUuid,
+			&i.InviteCreatedAt,
 			&i.DoctorUuid,
-			&i.CreatedAt,
+			&i.DoctorName,
+			&i.DoctorDescription,
 		); err != nil {
 			return nil, err
 		}
@@ -130,24 +218,46 @@ func (q *Queries) ListDoctorInvitesWithPhoneNumber(ctx context.Context, arg List
 
 const listPatientInvites = `-- name: ListPatientInvites :many
 
-SELECT id, phone_number, patient_uuid, doctor_uuid, created_at FROM invites WHERE patient_uuid = ?
+SELECT
+    invites.id as invite_id,
+    invites.phone_number as invite_phone_number,
+    invites.patient_uuid as invite_patient_uuid,
+    invites.created_at as invite_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
+FROM invites
+    JOIN doctors on doctors.uuid = invites.doctor_uuid
+WHERE patient_uuid = ?
 `
 
-func (q *Queries) ListPatientInvites(ctx context.Context, patientUuid uuid.UUID) ([]Invite, error) {
+type ListPatientInvitesRow struct {
+	InviteID          int64
+	InvitePhoneNumber string
+	InvitePatientUuid uuid.UUID
+	InviteCreatedAt   time.Time
+	DoctorUuid        uuid.UUID
+	DoctorName        string
+	DoctorDescription string
+}
+
+func (q *Queries) ListPatientInvites(ctx context.Context, patientUuid uuid.UUID) ([]ListPatientInvitesRow, error) {
 	rows, err := q.db.QueryContext(ctx, listPatientInvites, patientUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Invite
+	var items []ListPatientInvitesRow
 	for rows.Next() {
-		var i Invite
+		var i ListPatientInvitesRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.PhoneNumber,
-			&i.PatientUuid,
+			&i.InviteID,
+			&i.InvitePhoneNumber,
+			&i.InvitePatientUuid,
+			&i.InviteCreatedAt,
 			&i.DoctorUuid,
-			&i.CreatedAt,
+			&i.DoctorName,
+			&i.DoctorDescription,
 		); err != nil {
 			return nil, err
 		}
