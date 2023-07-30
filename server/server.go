@@ -6,14 +6,16 @@ import (
 	"net/http"
 	"strings"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/go-chi/chi/v5"
 	"github.com/joaopegoraro/ahpsico-go/database/db"
 )
 
 type Server struct {
-	Router  *chi.Mux
-	Queries *db.Queries
-	Ctx     context.Context
+	Router   *chi.Mux
+	Queries  *db.Queries
+	Ctx      context.Context
+	Firebase *firebase.App
 }
 
 type Error struct {
