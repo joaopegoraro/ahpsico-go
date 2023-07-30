@@ -94,11 +94,9 @@ func HandleUpdatePatient(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		updateParams := db.UpdatePatientParams{}
-
 		patient, err := s.Queries.UpdatePatient(s.Ctx, db.UpdatePatientParams{
 			Uuid: patientUuid,
-			Name: updateParams.Name,
+			Name: updatedPatient.Name,
 		})
 		if err != nil {
 			if err == sql.ErrNoRows {

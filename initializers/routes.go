@@ -25,9 +25,15 @@ func InitializeRoutes(s *server.Server) {
 
 	s.Router.Get("/doctors/{uuid}", handlers.HandleShowDoctor(s))
 	s.Router.Put("/doctors/{uuid}", handlers.HandleUpdateDoctor(s))
-	s.Router.Put("/doctors?patientUuid={patientUuid}", handlers.HandleListPatientDoctors(s))
+	s.Router.Get("/doctors?patientUuid={patientUuid}", handlers.HandleListPatientDoctors(s))
 
 	s.Router.Get("/patients/{uuid}", handlers.HandleShowPatient(s))
 	s.Router.Put("/patients/{uuid}", handlers.HandleUpdatePatient(s))
-	s.Router.Put("/patients?doctorUuid={doctorUuid}", handlers.HandleListDoctorPatients(s))
+	s.Router.Get("/patients?doctorUuid={doctorUuid}", handlers.HandleListDoctorPatients(s))
+
+	s.Router.Get("/sessions/{id}", handlers.HandleShowSession(s))
+	s.Router.Put("/sessions/{id}", handlers.HandleUpdateSession(s))
+	s.Router.Post("/sessions", handlers.HandleCreateSession(s))
+	s.Router.Get("/sessions?doctorUuid={doctorUuid}&date={date}", handlers.HandleListDoctorSessions(s))
+	s.Router.Get("/sessions?patientUuid={patientUuid}&upcoming={upcoming}", handlers.HandleListPatientSessions(s))
 }

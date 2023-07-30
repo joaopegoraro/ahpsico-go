@@ -2,39 +2,133 @@
 
 SELECT * FROM sessions WHERE id = ? LIMIT 1;
 
--- name: ListDoctorSessions :many
+-- name: GetSessionWithParticipants :one
 
-SELECT sessions.* FROM sessions WHERE doctor_uuid = ?;
+SELECT
+    s.id as session_id,
+    s.date as session_date,
+    s.group_index as session_group_index,
+    s.type as session_type,
+    s.status as session_status,
+    s.created_at as session_created_at,
+    d.uuid as doctor_uuid,
+    d.name as doctor_name,
+    d.description as doctor_description,
+    p.uuid as patient_uuid,
+    p.name as patient_name,
+    p.phone_number as patient_phone_number
+FROM sessions s
+    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
+    JOIN patients p ON patients.uuid = sessions.patient_uuid
+WHERE id = ?
+LIMIT 1;
 
--- name: ListDoctorSessionsWithinDate :many
+-- name: GetDoctorSessionByExactDate :one
 
 SELECT sessions.*
 FROM sessions
+WHERE doctor_uuid = ? AND date = ?
+LIMIT 1;
+
+-- name: ListDoctorSessions :many
+
+SELECT
+    s.id as session_id,
+    s.date as session_date,
+    s.group_index as session_group_index,
+    s.type as session_type,
+    s.status as session_status,
+    s.created_at as session_created_at,
+    p.uuid as patient_uuid,
+    p.name as patient_name,
+    p.phone_number as patient_phone_number
+FROM sessions s
+    JOIN patients p ON patients.uuid = sessions.patient_uuid
+WHERE doctor_uuid = ?;
+
+-- name: ListDoctorSessionsWithinDate :many
+
+SELECT
+    s.id as session_id,
+    s.date as session_date,
+    s.group_index as session_group_index,
+    s.type as session_type,
+    s.status as session_status,
+    s.created_at as session_created_at,
+    d.uuid as doctor_uuid,
+    d.name as doctor_name,
+    d.description as doctor_description,
+    p.uuid as patient_uuid,
+    p.name as patient_name,
+    p.phone_number as patient_phone_number
+FROM sessions s
+    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
+    JOIN patients p ON patients.uuid = sessions.patient_uuid
 WHERE
     doctor_uuid = sqlc.arg ('doctor_uuid')
     AND date >= sqlc.arg ('start_of_date')
     AND date <= sqlc.arg ('end_of_date');
 
--- name: ListDoctorSessionsByExactDate :many
-
-SELECT sessions.* FROM sessions WHERE doctor_uuid = ? AND date = ?;
-
 -- name: ListPatientSessions :many
 
-SELECT sessions.* FROM sessions WHERE patient_uuid = ?;
+SELECT
+    s.id as session_id,
+    s.date as session_date,
+    s.group_index as session_group_index,
+    s.type as session_type,
+    s.status as session_status,
+    s.created_at as session_created_at,
+    d.uuid as doctor_uuid,
+    d.name as doctor_name,
+    d.description as doctor_description,
+    p.uuid as patient_uuid,
+    p.name as patient_name,
+    p.phone_number as patient_phone_number
+FROM sessions s
+    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
+    JOIN patients p ON patients.uuid = sessions.patient_uuid
+WHERE patient_uuid = ?;
 
 -- name: ListDoctorPatientSessions :many
 
-SELECT sessions.*
-FROM sessions
+SELECT
+    s.id as session_id,
+    s.date as session_date,
+    s.group_index as session_group_index,
+    s.type as session_type,
+    s.status as session_status,
+    s.created_at as session_created_at,
+    d.uuid as doctor_uuid,
+    d.name as doctor_name,
+    d.description as doctor_description,
+    p.uuid as patient_uuid,
+    p.name as patient_name,
+    p.phone_number as patient_phone_number
+FROM sessions s
+    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
+    JOIN patients p ON patients.uuid = sessions.patient_uuid
 WHERE
     patient_uuid = ?
     AND doctor_uuid = ?;
 
 -- name: ListUpcomingDoctorPatientSessions :many
 
-SELECT sessions.*
-FROM sessions
+SELECT
+    s.id as session_id,
+    s.date as session_date,
+    s.group_index as session_group_index,
+    s.type as session_type,
+    s.status as session_status,
+    s.created_at as session_created_at,
+    d.uuid as doctor_uuid,
+    d.name as doctor_name,
+    d.description as doctor_description,
+    p.uuid as patient_uuid,
+    p.name as patient_name,
+    p.phone_number as patient_phone_number
+FROM sessions s
+    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
+    JOIN patients p ON patients.uuid = sessions.patient_uuid
 WHERE
     patient_uuid = ?
     AND doctor_uuid = ?
@@ -42,8 +136,22 @@ WHERE
 
 -- name: ListUpcomingPatientSessions :many
 
-SELECT sessions.*
-FROM sessions
+SELECT
+    s.id as session_id,
+    s.date as session_date,
+    s.group_index as session_group_index,
+    s.type as session_type,
+    s.status as session_status,
+    s.created_at as session_created_at,
+    d.uuid as doctor_uuid,
+    d.name as doctor_name,
+    d.description as doctor_description,
+    p.uuid as patient_uuid,
+    p.name as patient_name,
+    p.phone_number as patient_phone_number
+FROM sessions s
+    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
+    JOIN patients p ON patients.uuid = sessions.patient_uuid
 WHERE
     patient_uuid = ?
     AND date >= CURRENT_TIMESTAMP;
