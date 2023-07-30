@@ -13,6 +13,7 @@ func InitializeRoutes(s *server.Server) {
 
 	s.Router.Use(middleware.Logger)
 	s.Router.Use(middlewares.Security(s))
+	s.Router.Use(middlewares.Auth(s))
 
 	s.Router.Post("login", handlers.HandleLoginUser(s))
 	s.Router.Post("register", handlers.HandleRegisterUser(s))

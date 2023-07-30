@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gofrs/uuid"
 	"github.com/joaopegoraro/ahpsico-go/server"
 )
 
@@ -24,7 +25,7 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 			// Get the authorization Token.
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				handleAuthError(w, r, s)
+				RespondAuthError(w, r, s)
 				return
 			}
 
@@ -35,14 +36,14 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 			// Get the firebase auth client
 			auth, err := s.Firebase.Auth(s.Ctx)
 			if err != nil {
-				handleAuthError(w, r, s)
+				RespondAuthError(w, r, s)
 				return
 			}
 
 			// Decodes the token.
 			decodedToken, err := auth.VerifyIDToken(s.Ctx, idToken)
 			if err != nil {
-				handleAuthError(w, r, s)
+				RespondAuthError(w, r, s)
 				return
 			}
 
@@ -50,7 +51,7 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 			uid := decodedToken.UID
 			userRecord, err := auth.GetUser(s.Ctx, uid)
 			if err != nil {
-				handleAuthError(w, r, s)
+				RespondAuthError(w, r, s)
 				return
 			}
 
@@ -65,14 +66,19 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 	}
 }
 
-func GetAuthUserFromContext(ctx context.Context) (AuthUser, error) {
+func GetAuthDataFromContext(ctx context.Context) (AuthUser, uuid.UUID, error) {
 	user, ok := ctx.Value(userKeyCaller).(AuthUser)
 	if ok {
-		return user, nil
+		userUuid, err := uuid.FromString(user.UID)
+		if err != nil {
+			return user, uuid.Nil, err
+		}
+		return user, userUuid, nil
 	}
-	return user, errors.New("auth user not found in the context")
+
+	return user, uuid.Nil, errors.New("auth user not found in the context")
 }
 
-func handleAuthError(w http.ResponseWriter, r *http.Request, s *server.Server) {
-	s.RespondError(w, r, "Invalid auth token", http.StatusUnauthorized)
+func RespondAuthError(w http.ResponseWriter, r *http.Request, s *server.Server) {
+	s.RespondErrorDetail(w, r, "Invalid auth token", http.StatusUnauthorized)
 }

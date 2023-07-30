@@ -23,11 +23,13 @@ type Error struct {
 	Title    string `json:"title,omitempty"`
 	Detail   string `json:"detail,omitempty"`
 	Instance string `json:"instance,omitempty"`
+	Status   int    `json:"status,omitempty"`
 
 	//	"type": "https://example.com/probs/out-of-credit",
 	//	"title": "You do not have enough credit.",
 	//	"detail": "Your current balance is 30, but that costs 50.",
 	//	"instance": "/account/12345/msgs/abc",
+	//	"status": 400,
 }
 
 const Success = "SUCCESS"
@@ -45,11 +47,13 @@ func (s *Server) Respond(w http.ResponseWriter, r *http.Request, data interface{
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		errData, err := json.Marshal(Error{Detail: err.Error()})
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(errData)
 		return
 	}
@@ -72,7 +76,15 @@ func (s *Server) RespondNoContent(w http.ResponseWriter, r *http.Request) {
 	s.Respond(w, r, nil, http.StatusNoContent)
 }
 
-func (s *Server) RespondError(w http.ResponseWriter, r *http.Request, detail string, status int) {
+func (s *Server) RespondError(w http.ResponseWriter, r *http.Request, err Error) {
+	if err.Status < 1 {
+		s.Respond(w, r, err, http.StatusInternalServerError)
+		return
+	}
+	s.Respond(w, r, err, err.Status)
+}
+
+func (s *Server) RespondErrorDetail(w http.ResponseWriter, r *http.Request, detail string, status int) {
 	if strings.TrimSpace(detail) == "" {
 		s.Respond(w, r, nil, status)
 		return
