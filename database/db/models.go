@@ -59,6 +59,14 @@ type PatientWithDoctor struct {
 	CreatedAt   time.Time
 }
 
+type Schedule struct {
+	ID         int64
+	DoctorUuid uuid.UUID
+	Date       time.Time
+	CreatedAt  time.Time
+	UpdatedAt  sql.NullTime
+}
+
 type Session struct {
 	ID          int64
 	PatientUuid uuid.UUID
