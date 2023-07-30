@@ -82,6 +82,53 @@ func (q *Queries) GetSession(ctx context.Context, id int64) (Session, error) {
 	return i, err
 }
 
+const listDoctorPatientSessions = `-- name: ListDoctorPatientSessions :many
+
+SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at
+FROM sessions
+WHERE
+    patient_uuid = ?
+    AND doctor_uuid = ?
+`
+
+type ListDoctorPatientSessionsParams struct {
+	PatientUuid uuid.UUID
+	DoctorUuid  uuid.UUID
+}
+
+func (q *Queries) ListDoctorPatientSessions(ctx context.Context, arg ListDoctorPatientSessionsParams) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listDoctorPatientSessions, arg.PatientUuid, arg.DoctorUuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientUuid,
+			&i.DoctorUuid,
+			&i.Date,
+			&i.GroupIndex,
+			&i.Type,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDoctorSessions = `-- name: ListDoctorSessions :many
 
 SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at FROM sessions WHERE doctor_uuid = ?
@@ -120,6 +167,100 @@ func (q *Queries) ListDoctorSessions(ctx context.Context, doctorUuid uuid.UUID) 
 	return items, nil
 }
 
+const listDoctorSessionsByExactDate = `-- name: ListDoctorSessionsByExactDate :many
+
+SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at
+FROM sessions
+WHERE doctor_uuid = ? AND date = ?
+`
+
+type ListDoctorSessionsByExactDateParams struct {
+	DoctorUuid uuid.UUID
+	Date       time.Time
+}
+
+func (q *Queries) ListDoctorSessionsByExactDate(ctx context.Context, arg ListDoctorSessionsByExactDateParams) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listDoctorSessionsByExactDate, arg.DoctorUuid, arg.Date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientUuid,
+			&i.DoctorUuid,
+			&i.Date,
+			&i.GroupIndex,
+			&i.Type,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDoctorSessionsWithinDate = `-- name: ListDoctorSessionsWithinDate :many
+
+SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at
+FROM sessions
+WHERE
+    doctor_uuid = ?1
+    AND date >= ?2
+    AND date <= ?3
+`
+
+type ListDoctorSessionsWithinDateParams struct {
+	DoctorUuid  uuid.UUID
+	StartOfDate time.Time
+	EndOfDate   time.Time
+}
+
+func (q *Queries) ListDoctorSessionsWithinDate(ctx context.Context, arg ListDoctorSessionsWithinDateParams) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listDoctorSessionsWithinDate, arg.DoctorUuid, arg.StartOfDate, arg.EndOfDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientUuid,
+			&i.DoctorUuid,
+			&i.Date,
+			&i.GroupIndex,
+			&i.Type,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPatientSessions = `-- name: ListPatientSessions :many
 
 SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at FROM sessions WHERE patient_uuid = ?
@@ -127,6 +268,96 @@ SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, 
 
 func (q *Queries) ListPatientSessions(ctx context.Context, patientUuid uuid.UUID) ([]Session, error) {
 	rows, err := q.db.QueryContext(ctx, listPatientSessions, patientUuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientUuid,
+			&i.DoctorUuid,
+			&i.Date,
+			&i.GroupIndex,
+			&i.Type,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUpcomingDoctorPatientSessions = `-- name: ListUpcomingDoctorPatientSessions :many
+
+SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at
+FROM sessions
+WHERE
+    patient_uuid = ?
+    AND doctor_uuid = ?
+    AND date >= CURRENT_TIMESTAMP
+`
+
+type ListUpcomingDoctorPatientSessionsParams struct {
+	PatientUuid uuid.UUID
+	DoctorUuid  uuid.UUID
+}
+
+func (q *Queries) ListUpcomingDoctorPatientSessions(ctx context.Context, arg ListUpcomingDoctorPatientSessionsParams) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listUpcomingDoctorPatientSessions, arg.PatientUuid, arg.DoctorUuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientUuid,
+			&i.DoctorUuid,
+			&i.Date,
+			&i.GroupIndex,
+			&i.Type,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUpcomingPatientSessions = `-- name: ListUpcomingPatientSessions :many
+
+SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at
+FROM sessions
+WHERE
+    patient_uuid = ?
+    AND date >= CURRENT_TIMESTAMP
+`
+
+func (q *Queries) ListUpcomingPatientSessions(ctx context.Context, patientUuid uuid.UUID) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listUpcomingPatientSessions, patientUuid)
 	if err != nil {
 		return nil, err
 	}

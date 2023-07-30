@@ -6,9 +6,49 @@ SELECT * FROM sessions WHERE id = ? LIMIT 1;
 
 SELECT sessions.* FROM sessions WHERE doctor_uuid = ?;
 
+-- name: ListDoctorSessionsWithinDate :many
+
+SELECT sessions.*
+FROM sessions
+WHERE
+    doctor_uuid = sqlc.arg ('doctor_uuid')
+    AND date >= sqlc.arg ('start_of_date')
+    AND date <= sqlc.arg ('end_of_date');
+
+-- name: ListDoctorSessionsByExactDate :many
+
+SELECT sessions.*
+FROM sessions
+WHERE doctor_uuid = ? AND date = ?;
+
 -- name: ListPatientSessions :many
 
 SELECT sessions.* FROM sessions WHERE patient_uuid = ?;
+
+-- name: ListDoctorPatientSessions :many
+
+SELECT sessions.*
+FROM sessions
+WHERE
+    patient_uuid = ?
+    AND doctor_uuid = ?;
+
+-- name: ListUpcomingDoctorPatientSessions :many
+
+SELECT sessions.*
+FROM sessions
+WHERE
+    patient_uuid = ?
+    AND doctor_uuid = ?
+    AND date >= CURRENT_TIMESTAMP;
+
+-- name: ListUpcomingPatientSessions :many
+
+SELECT sessions.*
+FROM sessions
+WHERE
+    patient_uuid = ?
+    AND date >= CURRENT_TIMESTAMP;
 
 -- name: CreateSession :one
 
