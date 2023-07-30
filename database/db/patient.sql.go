@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/gofrs/uuid"
 )
@@ -46,6 +45,35 @@ DELETE FROM patients WHERE uuid = ?
 func (q *Queries) DeletePatient(ctx context.Context, argUuid uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, deletePatient, argUuid)
 	return err
+}
+
+const getDoctorPatientWithUuid = `-- name: GetDoctorPatientWithUuid :one
+
+SELECT patients.uuid, patients.name, patients.phone_number, patients.created_at, patients.updated_at
+FROM patients
+    JOIN patient_with_doctor ON patients.uuid = patient_with_doctor.patient_uuid
+WHERE
+    patients.uuid = ?
+    AND patient_with_doctor.doctor_uuid = ?
+LIMIT 1
+`
+
+type GetDoctorPatientWithUuidParams struct {
+	Uuid       uuid.UUID
+	DoctorUuid uuid.UUID
+}
+
+func (q *Queries) GetDoctorPatientWithUuid(ctx context.Context, arg GetDoctorPatientWithUuidParams) (Patient, error) {
+	row := q.db.QueryRowContext(ctx, getDoctorPatientWithUuid, arg.Uuid, arg.DoctorUuid)
+	var i Patient
+	err := row.Scan(
+		&i.Uuid,
+		&i.Name,
+		&i.PhoneNumber,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getPatient = `-- name: GetPatient :one
@@ -170,14 +198,14 @@ const updatePatient = `-- name: UpdatePatient :one
 
 UPDATE patients
 SET
-    name = COALESCE(?1, name),
+    name = ?1,
     updated_at = CURRENT_TIMESTAMP
 WHERE
     uuid = ?2 RETURNING uuid, name, phone_number, created_at, updated_at
 `
 
 type UpdatePatientParams struct {
-	Name sql.NullString
+	Name string
 	Uuid uuid.UUID
 }
 

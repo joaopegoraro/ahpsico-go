@@ -6,6 +6,16 @@ SELECT * FROM patients WHERE uuid = ? LIMIT 1;
 
 SELECT * FROM patients WHERE phone_number = ? LIMIT 1;
 
+-- name: GetDoctorPatientWithUuid :one
+
+SELECT patients.*
+FROM patients
+    JOIN patient_with_doctor ON patients.uuid = patient_with_doctor.patient_uuid
+WHERE
+    patients.uuid = ?
+    AND patient_with_doctor.doctor_uuid = ?
+LIMIT 1;
+
 -- name: ListDoctorPatients :many
 
 SELECT patients.*
@@ -33,7 +43,7 @@ VALUES (?, ?, ?) RETURNING *;
 
 UPDATE patients
 SET
-    name = COALESCE(sqlc.narg ('name'), name),
+    name = sqlc.arg ('name'),
     updated_at = CURRENT_TIMESTAMP
 WHERE
     uuid = sqlc.arg('uuid') RETURNING *;
