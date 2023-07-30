@@ -35,7 +35,7 @@ func HandleListInvites(s *server.Server) http.HandlerFunc {
 		fetchedDoctorInvites, err := s.Queries.ListDoctorInvites(s.Ctx, userUuid)
 		if err != nil || len(fetchedDoctorInvites) == 0 {
 			fetchedPatientInvites, err := s.Queries.ListPatientInvites(s.Ctx, userUuid)
-			if err != nil || len(fetchedPatientInvites) == 0 {
+			if err != nil || len(fetchedPatientInvites) < 1 {
 				s.RespondNoContent(w, r)
 				return
 			}
@@ -67,7 +67,7 @@ func HandleListInvites(s *server.Server) http.HandlerFunc {
 			}
 		}
 
-		if len(invites) == 0 {
+		if len(invites) < 1 {
 			s.RespondNoContent(w, r)
 			return
 		}
@@ -153,11 +153,11 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 			s.RespondErrorStatus(w, r, http.StatusInternalServerError)
 		}
 
-		s.RespondOk(w, r, response{
+		s.Respond(w, r, response{
 			ID:          invite.ID,
 			PhoneNumber: invite.PhoneNumber,
 			PatientUuid: invite.PatientUuid.String(),
-		})
+		}, http.StatusCreated)
 	}
 }
 

@@ -22,4 +22,8 @@ func InitializeRoutes(s *server.Server) {
 	s.Router.Post("/invites", handlers.HandleCreateInvite(s))
 	s.Router.Delete("/invites/{id}", handlers.HandleDeleteInvite(s))
 	s.Router.Post("/invites/{id}/accept", handlers.HandleAcceptInvite(s))
+
+	s.Router.Get("/doctors/{uuid}", handlers.HandleShowDoctor(s))
+	s.Router.Put("/doctors/{uuid}", handlers.HandleUpdateDoctor(s))
+	s.Router.Put("/doctors?patientUuid={patientUuid}", handlers.HandleListPatientDoctors(s))
 }

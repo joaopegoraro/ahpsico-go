@@ -83,6 +83,6 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 			IsDoctor:    *newUser.IsDoctor,
 		}
 
-		s.RespondOk(w, r, response)
+		s.Respond(w, r, response, http.StatusCreated)
 	}
 }
