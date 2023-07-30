@@ -17,9 +17,7 @@ WHERE
 
 -- name: ListDoctorSessionsByExactDate :many
 
-SELECT sessions.*
-FROM sessions
-WHERE doctor_uuid = ? AND date = ?;
+SELECT sessions.* FROM sessions WHERE doctor_uuid = ? AND date = ?;
 
 -- name: ListPatientSessions :many
 
@@ -74,3 +72,5 @@ WHERE
     id = sqlc.arg('id') RETURNING *;
 
 -- name: DeleteSession :exec
+
+DELETE FROM sessions where id = ?;

@@ -10,7 +10,7 @@ const (
 )
 
 // Remove this when consts are used
-func TempEnumInit() {
+func TempSessionEnumInit() {
 	fmt.Print(notConfirmed)
 	fmt.Print(confirmed)
 	fmt.Print(canceled)

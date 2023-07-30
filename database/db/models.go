@@ -25,6 +25,18 @@ type AdviceWithPatient struct {
 	CreatedAt   time.Time
 }
 
+type Assignment struct {
+	ID          int64
+	Title       string
+	Description string
+	PatientUuid uuid.UUID
+	DoctorUuid  uuid.UUID
+	SessionID   int64
+	Status      int64
+	CreatedAt   time.Time
+	UpdatedAt   sql.NullTime
+}
+
 type Doctor struct {
 	Uuid           uuid.UUID
 	Name           string
