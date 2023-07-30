@@ -84,6 +84,14 @@ func (s *Server) RespondError(w http.ResponseWriter, r *http.Request, err Error)
 	s.Respond(w, r, err, err.Status)
 }
 
+func (s *Server) RespondErrorStatus(w http.ResponseWriter, r *http.Request, status int) {
+	if status < 1 {
+		s.Respond(w, r, nil, http.StatusInternalServerError)
+		return
+	}
+	s.Respond(w, r, nil, status)
+}
+
 func (s *Server) RespondErrorDetail(w http.ResponseWriter, r *http.Request, detail string, status int) {
 	if strings.TrimSpace(detail) == "" {
 		s.Respond(w, r, nil, status)
