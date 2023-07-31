@@ -85,6 +85,12 @@ func HandleCreateAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
+		if createdAssignment.Status < firstAssignmentStatus || createdAssignment.Status > lastAssignmentStatus {
+			errMessage := fmt.Sprintf("status must be between %d and %d", firstAssignmentStatus, lastAssignmentStatus)
+			s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
+			return
+		}
+
 		assignment, err := s.Queries.CreateAssignment(s.Ctx, db.CreateAssignmentParams{
 			Title:       createdAssignment.Title,
 			Description: createdAssignment.Description,
