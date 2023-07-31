@@ -19,7 +19,9 @@ func HandleShowPatient(s *server.Server) http.HandlerFunc {
 		PhoneNumber string `json:"phoneNumber"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -34,9 +36,9 @@ func HandleShowPatient(s *server.Server) http.HandlerFunc {
 
 		var patient db.Patient
 		if patientUuid == userUuid {
-			patient, err = s.Queries.GetPatient(s.Ctx, patientUuid)
+			patient, err = s.Queries.GetPatient(ctx, patientUuid)
 		} else {
-			patient, err = s.Queries.GetDoctorPatientWithUuid(s.Ctx, db.GetDoctorPatientWithUuidParams{
+			patient, err = s.Queries.GetDoctorPatientWithUuid(ctx, db.GetDoctorPatientWithUuidParams{
 				DoctorUuid: userUuid,
 				Uuid:       patientUuid,
 			})
@@ -65,7 +67,9 @@ func HandleUpdatePatient(s *server.Server) http.HandlerFunc {
 		PhoneNumber string `json:"phoneNumber"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -94,7 +98,7 @@ func HandleUpdatePatient(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		patient, err := s.Queries.UpdatePatient(s.Ctx, db.UpdatePatientParams{
+		patient, err := s.Queries.UpdatePatient(ctx, db.UpdatePatientParams{
 			Uuid: patientUuid,
 			Name: updatedPatient.Name,
 		})
@@ -134,7 +138,9 @@ func handleListDoctorPatients(s *server.Server, doctorUuidQueryParam string) htt
 		PhoneNumber string `json:"phoneNumber"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -151,7 +157,7 @@ func handleListDoctorPatients(s *server.Server, doctorUuidQueryParam string) htt
 			return
 		}
 
-		fetchedPatients, err := s.Queries.ListDoctorPatients(s.Ctx, doctorUuid)
+		fetchedPatients, err := s.Queries.ListDoctorPatients(ctx, doctorUuid)
 		if err != nil || fetchedPatients == nil {
 			if err == sql.ErrNoRows {
 				s.RespondNoContent(w, r)

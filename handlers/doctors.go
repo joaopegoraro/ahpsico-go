@@ -23,6 +23,8 @@ func HandleShowDoctor(s *server.Server) http.HandlerFunc {
 		PaymentDetails string `json:"paymentDetails"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		doctorUuidParam := chi.URLParam(r, "uuid")
 		doctorUuid, err := uuid.FromString(doctorUuidParam)
 		if err != nil || doctorUuid == uuid.Nil {
@@ -30,7 +32,7 @@ func HandleShowDoctor(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		doctor, err := s.Queries.GetDoctor(s.Ctx, doctorUuid)
+		doctor, err := s.Queries.GetDoctor(ctx, doctorUuid)
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -66,7 +68,9 @@ func HandleUpdateDoctor(s *server.Server) http.HandlerFunc {
 		PaymentDetails string `json:"paymentDetails"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -116,7 +120,7 @@ func HandleUpdateDoctor(s *server.Server) http.HandlerFunc {
 			updateParams.PaymentDetails = sql.NullString{String: *updatedDoctor.PaymentDetails, Valid: true}
 		}
 
-		doctor, err := s.Queries.UpdateDoctor(s.Ctx, updateParams)
+		doctor, err := s.Queries.UpdateDoctor(ctx, updateParams)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				s.RespondErrorStatus(w, r, http.StatusNotFound)
@@ -161,7 +165,9 @@ func handleListPatientDoctors(s *server.Server, patientUuidQueryParam string) ht
 		PaymentDetails string `json:"paymentDetails"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -178,7 +184,7 @@ func handleListPatientDoctors(s *server.Server, patientUuidQueryParam string) ht
 			return
 		}
 
-		fetchedDoctors, err := s.Queries.ListPatientDoctors(s.Ctx, patientUuid)
+		fetchedDoctors, err := s.Queries.ListPatientDoctors(ctx, patientUuid)
 		if err != nil || fetchedDoctors == nil {
 			if err == sql.ErrNoRows {
 				s.RespondNoContent(w, r)

@@ -22,52 +22,43 @@ type AuthUser struct {
 func Auth(s *server.Server) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// TODO REMOVE THIS BLOCK
-			user := AuthUser{
-				UID: "b0317302-4531-45b1-95c2-c765a2145017",
-				//UID:         "8224f59d-cdab-426d-9c12-b6c662f6abb2",
-				PhoneNumber: "99999999999",
+			ctx := r.Context()
+
+			idToken, err := getIdTokenFromRequest(r)
+			if err != nil {
+				RespondAuthError(w, r, s)
+				return
 			}
-			requestContext := context.WithValue(r.Context(), userKeyCaller, user)
+
+			// Get the firebase auth client
+			auth, err := s.Firebase.Auth(ctx)
+			if err != nil {
+				RespondAuthError(w, r, s)
+				return
+			}
+
+			// Decodes the token.
+			decodedToken, err := auth.VerifyIDToken(ctx, idToken)
+			if err != nil {
+				RespondAuthError(w, r, s)
+				return
+			}
+
+			// Get the uid from the decoded token, then use it to find and return the user object
+			uid := decodedToken.UID
+			userRecord, err := auth.GetUser(ctx, uid)
+			if err != nil {
+				RespondAuthError(w, r, s)
+				return
+			}
+
+			// pass the user object to the request context
+			user := AuthUser{
+				UID:         userRecord.UID,
+				PhoneNumber: userRecord.PhoneNumber,
+			}
+			requestContext := context.WithValue(ctx, userKeyCaller, user)
 			next.ServeHTTP(w, r.WithContext(requestContext))
-			return
-			// TODO END OF BLOCK
-
-			// idToken, err := getIdTokenFromRequest(r)
-			// if err != nil {
-			// 	RespondAuthError(w, r, s)
-			// 	return
-			// }
-
-			// // Get the firebase auth client
-			// auth, err := s.Firebase.Auth(s.Ctx)
-			// if err != nil {
-			// 	RespondAuthError(w, r, s)
-			// 	return
-			// }
-
-			// // Decodes the token.
-			// decodedToken, err := auth.VerifyIDToken(s.Ctx, idToken)
-			// if err != nil {
-			// 	RespondAuthError(w, r, s)
-			// 	return
-			// }
-
-			// // Get the uid from the decoded token, then use it to find and return the user object
-			// uid := decodedToken.UID
-			// userRecord, err := auth.GetUser(s.Ctx, uid)
-			// if err != nil {
-			// 	RespondAuthError(w, r, s)
-			// 	return
-			// }
-
-			// // pass the user object to the request context
-			// user := AuthUser{
-			// 	UID:         userRecord.UID,
-			// 	PhoneNumber: userRecord.PhoneNumber,
-			// }
-			// requestContext := context.WithValue(r.Context(), userKeyCaller, user)
-			// next.ServeHTTP(w, r.WithContext(requestContext))
 		})
 	}
 }

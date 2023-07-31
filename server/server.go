@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -14,7 +13,6 @@ import (
 type Server struct {
 	Router   *chi.Mux
 	Queries  *db.Queries
-	Ctx      context.Context
 	Firebase *firebase.App
 }
 

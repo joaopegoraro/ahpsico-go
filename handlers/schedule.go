@@ -18,7 +18,9 @@ import (
 
 func HandleDeleteSchedule(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -30,7 +32,7 @@ func HandleDeleteSchedule(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		schedule, err := s.Queries.GetSchedule(s.Ctx, int64(scheduleID))
+		schedule, err := s.Queries.GetSchedule(ctx, int64(scheduleID))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -41,7 +43,7 @@ func HandleDeleteSchedule(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		err = s.Queries.DeleteSchedule(s.Ctx, int64(scheduleID))
+		err = s.Queries.DeleteSchedule(ctx, int64(scheduleID))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusInternalServerError)
 			return
@@ -62,7 +64,9 @@ func HandleCreateSchedule(s *server.Server) http.HandlerFunc {
 		Date       string `json:"date"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -93,7 +97,7 @@ func HandleCreateSchedule(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		schedule, err := s.Queries.CreateSchedule(s.Ctx, db.CreateScheduleParams{
+		schedule, err := s.Queries.CreateSchedule(ctx, db.CreateScheduleParams{
 			DoctorUuid: doctorUuid,
 			Date:       parsedDate,
 		})
@@ -130,13 +134,15 @@ func handleListDoctorSchedule(s *server.Server, doctorUuidQueryParam string) htt
 		IsSession  bool   `json:"isSession"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		doctorUuid, err := uuid.FromString(doctorUuidQueryParam)
 		if err != nil || doctorUuid == uuid.Nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
 		}
 
-		fetchedScheduleList, err := s.Queries.ListDoctorSchedule(s.Ctx, doctorUuid)
+		fetchedScheduleList, err := s.Queries.ListDoctorSchedule(ctx, doctorUuid)
 		if err != nil || fetchedScheduleList == nil {
 			if err == sql.ErrNoRows {
 				s.RespondNoContent(w, r)
@@ -156,7 +162,7 @@ func handleListDoctorSchedule(s *server.Server, doctorUuidQueryParam string) htt
 			})
 		}
 
-		fetchedSessions, err := s.Queries.ListDoctorActiveSessions(s.Ctx, doctorUuid)
+		fetchedSessions, err := s.Queries.ListDoctorActiveSessions(ctx, doctorUuid)
 		if err == nil && len(fetchedSessions) > 0 {
 			for _, session := range fetchedSessions {
 				schedule = append(schedule, response{

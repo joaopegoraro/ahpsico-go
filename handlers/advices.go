@@ -17,7 +17,9 @@ import (
 
 func HandleDeleteAdvice(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -29,7 +31,7 @@ func HandleDeleteAdvice(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		advice, err := s.Queries.GetAdvice(s.Ctx, int64(adviceID))
+		advice, err := s.Queries.GetAdvice(ctx, int64(adviceID))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -40,7 +42,7 @@ func HandleDeleteAdvice(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		err = s.Queries.DeleteAdvice(s.Ctx, int64(adviceID))
+		err = s.Queries.DeleteAdvice(ctx, int64(adviceID))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusInternalServerError)
 			return
@@ -64,7 +66,9 @@ func HandleCreateAdvice(s *server.Server) http.HandlerFunc {
 		CreatedAt    string   `json:"createdAt"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -109,7 +113,7 @@ func HandleCreateAdvice(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		advice, err := s.Queries.CreateAdvice(s.Ctx, db.CreateAdviceParams{
+		advice, err := s.Queries.CreateAdvice(ctx, db.CreateAdviceParams{
 			DoctorUuid: doctorUuid,
 			Message:    createdAdvice.Message,
 		})
@@ -119,7 +123,7 @@ func HandleCreateAdvice(s *server.Server) http.HandlerFunc {
 		}
 
 		for _, patientUuid := range patientUuids {
-			err = s.Queries.CreateAdviceWithPatient(s.Ctx, db.CreateAdviceWithPatientParams{
+			err = s.Queries.CreateAdviceWithPatient(ctx, db.CreateAdviceWithPatientParams{
 				AdviceID:    advice.ID,
 				PatientUuid: patientUuid,
 			})
@@ -169,7 +173,9 @@ func handleListDoctorAdvices(s *server.Server, doctorUuidQueryParam string) http
 		CreatedAt    string   `json:"createdAt"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -186,7 +192,7 @@ func handleListDoctorAdvices(s *server.Server, doctorUuidQueryParam string) http
 			return
 		}
 
-		fetchedAdvices, err := s.Queries.ListDoctorAdvices(s.Ctx, doctorUuid)
+		fetchedAdvices, err := s.Queries.ListDoctorAdvices(ctx, doctorUuid)
 		if err != nil || fetchedAdvices == nil {
 			if err == sql.ErrNoRows {
 				s.RespondNoContent(w, r)
@@ -241,7 +247,9 @@ func handleListPatientAdvices(s *server.Server, patientUuidQueryParam string) ht
 		CreatedAt   string `json:"createdAt"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -255,10 +263,10 @@ func handleListPatientAdvices(s *server.Server, patientUuidQueryParam string) ht
 
 		var fetchedAdvices []db.ListPatientAdvicesRow
 		if userUuid == patientUuid {
-			fetchedAdvices, err = s.Queries.ListPatientAdvices(s.Ctx, patientUuid)
+			fetchedAdvices, err = s.Queries.ListPatientAdvices(ctx, patientUuid)
 		} else {
 			var list []db.ListDoctorPatientAdvicesRow
-			list, err = s.Queries.ListDoctorPatientAdvices(s.Ctx, db.ListDoctorPatientAdvicesParams{
+			list, err = s.Queries.ListDoctorPatientAdvices(ctx, db.ListDoctorPatientAdvicesParams{
 				PatientUuid: patientUuid,
 				DoctorUuid:  userUuid,
 			})

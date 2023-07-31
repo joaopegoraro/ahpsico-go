@@ -59,7 +59,9 @@ func HandleShowSession(s *server.Server) http.HandlerFunc {
 		Date       string  `json:"date"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -71,7 +73,7 @@ func HandleShowSession(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		session, err := s.Queries.GetSessionWithParticipants(s.Ctx, int64(sessionId))
+		session, err := s.Queries.GetSessionWithParticipants(ctx, int64(sessionId))
 		if err != nil || sessionId < 1 {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -126,7 +128,9 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 		Status: http.StatusConflict,
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -174,7 +178,7 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		_, err = s.Queries.GetDoctorSessionByExactDate(s.Ctx, db.GetDoctorSessionByExactDateParams{
+		_, err = s.Queries.GetDoctorSessionByExactDate(ctx, db.GetDoctorSessionByExactDateParams{
 			DoctorUuid: doctorUuid,
 			Date:       parsedDate,
 		})
@@ -183,7 +187,7 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		session, err := s.Queries.CreateSession(s.Ctx, db.CreateSessionParams{
+		session, err := s.Queries.CreateSession(ctx, db.CreateSessionParams{
 			PatientUuid: patientUuid,
 			DoctorUuid:  doctorUuid,
 			Date:        parsedDate,
@@ -228,7 +232,9 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 		Status: http.StatusConflict,
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -247,7 +253,7 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		savedSession, err := s.Queries.GetSession(s.Ctx, int64(sessionId))
+		savedSession, err := s.Queries.GetSession(ctx, int64(sessionId))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -281,7 +287,7 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 				return
 			}
 
-			_, err = s.Queries.GetDoctorSessionByExactDate(s.Ctx, db.GetDoctorSessionByExactDateParams{
+			_, err = s.Queries.GetDoctorSessionByExactDate(ctx, db.GetDoctorSessionByExactDateParams{
 				DoctorUuid: savedSession.DoctorUuid,
 				Date:       parsedDate,
 			})
@@ -293,7 +299,7 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 			updateSessionParams.Date = sql.NullTime{Time: parsedDate, Valid: true}
 		}
 
-		session, err := s.Queries.UpdateSession(s.Ctx, updateSessionParams)
+		session, err := s.Queries.UpdateSession(ctx, updateSessionParams)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				s.RespondErrorStatus(w, r, http.StatusNotFound)
@@ -348,7 +354,9 @@ func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) htt
 		Date       string  `json:"date"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -371,7 +379,7 @@ func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) htt
 
 		fetchedSessions := []db.ListDoctorSessionsRow{}
 		if strings.TrimSpace(dateParam) == "" {
-			fetchedSessions, err = s.Queries.ListDoctorSessions(s.Ctx, doctorUuid)
+			fetchedSessions, err = s.Queries.ListDoctorSessions(ctx, doctorUuid)
 		} else {
 			var parsedDate time.Time
 			parsedDate, err = time.Parse(utils.DateFormat, dateParam)
@@ -382,7 +390,7 @@ func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) htt
 			}
 
 			var list []db.ListDoctorSessionsWithinDateRow
-			list, err = s.Queries.ListDoctorSessionsWithinDate(s.Ctx, db.ListDoctorSessionsWithinDateParams{
+			list, err = s.Queries.ListDoctorSessionsWithinDate(ctx, db.ListDoctorSessionsWithinDateParams{
 				DoctorUuid:  doctorUuid,
 				StartOfDate: utils.GetStartOfDay(parsedDate),
 				EndOfDate:   utils.GetEndOfDay(parsedDate),
@@ -446,7 +454,9 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 		Date       string  `json:"date"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -471,13 +481,13 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 		fetchedSessions := []db.ListPatientSessionsRow{}
 		if upcoming && isPatient {
 			var list []db.ListUpcomingPatientSessionsRow
-			list, err = s.Queries.ListUpcomingPatientSessions(s.Ctx, patientUuid)
+			list, err = s.Queries.ListUpcomingPatientSessions(ctx, patientUuid)
 			for _, session := range list {
 				fetchedSessions = append(fetchedSessions, db.ListPatientSessionsRow(session))
 			}
 		} else if upcoming && !isPatient {
 			var list []db.ListUpcomingDoctorPatientSessionsRow
-			list, err = s.Queries.ListUpcomingDoctorPatientSessions(s.Ctx, db.ListUpcomingDoctorPatientSessionsParams{
+			list, err = s.Queries.ListUpcomingDoctorPatientSessions(ctx, db.ListUpcomingDoctorPatientSessionsParams{
 				DoctorUuid:  userUuid,
 				PatientUuid: patientUuid,
 			})
@@ -486,7 +496,7 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 			}
 		} else if !isPatient {
 			var list []db.ListDoctorPatientSessionsRow
-			list, err = s.Queries.ListDoctorPatientSessions(s.Ctx, db.ListDoctorPatientSessionsParams{
+			list, err = s.Queries.ListDoctorPatientSessions(ctx, db.ListDoctorPatientSessionsParams{
 				DoctorUuid:  userUuid,
 				PatientUuid: patientUuid,
 			})
@@ -494,7 +504,7 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 				fetchedSessions = append(fetchedSessions, db.ListPatientSessionsRow(session))
 			}
 		} else {
-			fetchedSessions, err = s.Queries.ListPatientSessions(s.Ctx, patientUuid)
+			fetchedSessions, err = s.Queries.ListPatientSessions(ctx, patientUuid)
 		}
 
 		if err != nil || fetchedSessions == nil {

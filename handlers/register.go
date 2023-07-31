@@ -26,7 +26,9 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 		Status: http.StatusNotAcceptable,
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		user, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -43,25 +45,25 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		_, err = s.Queries.GetDoctor(s.Ctx, userUuid)
+		_, err = s.Queries.GetDoctor(ctx, userUuid)
 		if err == nil {
 			s.RespondError(w, r, userAlreadyRegisteredError)
 			return
 		}
-		_, err = s.Queries.GetPatient(s.Ctx, userUuid)
+		_, err = s.Queries.GetPatient(ctx, userUuid)
 		if err == nil {
 			s.RespondError(w, r, userAlreadyRegisteredError)
 			return
 		}
 
 		if *newUser.IsDoctor {
-			_, err = s.Queries.CreateDoctor(s.Ctx, db.CreateDoctorParams{
+			_, err = s.Queries.CreateDoctor(ctx, db.CreateDoctorParams{
 				Uuid:        userUuid,
 				Name:        newUser.UserName,
 				PhoneNumber: user.PhoneNumber,
 			})
 		} else {
-			_, err = s.Queries.CreatePatient(s.Ctx, db.CreatePatientParams{
+			_, err = s.Queries.CreatePatient(ctx, db.CreatePatientParams{
 				Uuid:        userUuid,
 				Name:        newUser.UserName,
 				PhoneNumber: user.PhoneNumber,

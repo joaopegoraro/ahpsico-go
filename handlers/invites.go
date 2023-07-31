@@ -24,7 +24,9 @@ func HandleListInvites(s *server.Server) http.HandlerFunc {
 		Doctor      doctor `json:"doctor"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -32,9 +34,9 @@ func HandleListInvites(s *server.Server) http.HandlerFunc {
 
 		invites := []response{}
 
-		fetchedInvites, err := s.Queries.ListDoctorInvites(s.Ctx, userUuid)
+		fetchedInvites, err := s.Queries.ListDoctorInvites(ctx, userUuid)
 		if err != nil || len(fetchedInvites) == 0 {
-			fetchedPatientInvites, err := s.Queries.ListPatientInvites(s.Ctx, userUuid)
+			fetchedPatientInvites, err := s.Queries.ListPatientInvites(ctx, userUuid)
 			if err != nil || len(fetchedPatientInvites) < 1 {
 				s.RespondNoContent(w, r)
 				return
@@ -92,13 +94,15 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 		Status: http.StatusConflict,
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
 		}
 
-		_, err = s.Queries.GetDoctor(s.Ctx, userUuid)
+		_, err = s.Queries.GetDoctor(ctx, userUuid)
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusForbidden)
 			return
@@ -111,7 +115,7 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		_, err = s.Queries.GetDoctorInviteByPhoneNumber(s.Ctx, db.GetDoctorInviteByPhoneNumberParams{
+		_, err = s.Queries.GetDoctorInviteByPhoneNumber(ctx, db.GetDoctorInviteByPhoneNumberParams{
 			DoctorUuid:  userUuid,
 			PhoneNumber: newInvite.PhoneNumber,
 		})
@@ -120,13 +124,13 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		patient, err := s.Queries.GetPatientByPhoneNumber(s.Ctx, newInvite.PhoneNumber)
+		patient, err := s.Queries.GetPatientByPhoneNumber(ctx, newInvite.PhoneNumber)
 		if err != nil {
 			s.RespondError(w, r, patientNotRegisteredError)
 			return
 		}
 
-		patients, _ := s.Queries.ListDoctorPatientsByPhoneNumber(s.Ctx, db.ListDoctorPatientsByPhoneNumberParams{
+		patients, _ := s.Queries.ListDoctorPatientsByPhoneNumber(ctx, db.ListDoctorPatientsByPhoneNumberParams{
 			DoctorUuid:  userUuid,
 			PhoneNumber: newInvite.PhoneNumber,
 		})
@@ -135,7 +139,7 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		invite, err := s.Queries.CreateInvite(s.Ctx, db.CreateInviteParams{
+		invite, err := s.Queries.CreateInvite(ctx, db.CreateInviteParams{
 			PhoneNumber: newInvite.PhoneNumber,
 			DoctorUuid:  userUuid,
 			PatientUuid: patient.Uuid,
@@ -154,7 +158,9 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 
 func HandleDeleteInvite(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -166,7 +172,7 @@ func HandleDeleteInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		invite, err := s.Queries.GetInvite(s.Ctx, int64(inviteId))
+		invite, err := s.Queries.GetInvite(ctx, int64(inviteId))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -177,7 +183,7 @@ func HandleDeleteInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		err = s.Queries.DeleteInvite(s.Ctx, invite.ID)
+		err = s.Queries.DeleteInvite(ctx, invite.ID)
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusInternalServerError)
 			return
@@ -189,7 +195,9 @@ func HandleDeleteInvite(s *server.Server) http.HandlerFunc {
 
 func HandleAcceptInvite(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -201,7 +209,7 @@ func HandleAcceptInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		invite, err := s.Queries.GetInvite(s.Ctx, int64(inviteId))
+		invite, err := s.Queries.GetInvite(ctx, int64(inviteId))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -212,7 +220,7 @@ func HandleAcceptInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		err = s.Queries.AddPatientDoctor(s.Ctx, db.AddPatientDoctorParams{
+		err = s.Queries.AddPatientDoctor(ctx, db.AddPatientDoctorParams{
 			DoctorUuid:  invite.DoctorUuid,
 			PatientUuid: invite.PatientUuid,
 		})
@@ -221,7 +229,7 @@ func HandleAcceptInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		err = s.Queries.DeleteInvite(s.Ctx, invite.ID)
+		err = s.Queries.DeleteInvite(ctx, invite.ID)
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusInternalServerError)
 			return

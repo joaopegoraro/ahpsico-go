@@ -45,7 +45,9 @@ func HandleCreateAssignment(s *server.Server) http.HandlerFunc {
 		Status            int64  `json:"status"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -91,7 +93,7 @@ func HandleCreateAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		assignment, err := s.Queries.CreateAssignment(s.Ctx, db.CreateAssignmentParams{
+		assignment, err := s.Queries.CreateAssignment(ctx, db.CreateAssignmentParams{
 			Title:       createdAssignment.Title,
 			Description: createdAssignment.Description,
 			PatientUuid: patientUuid,
@@ -118,7 +120,9 @@ func HandleCreateAssignment(s *server.Server) http.HandlerFunc {
 
 func HandleDeleteAssignment(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -130,7 +134,7 @@ func HandleDeleteAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		savedAssignment, err := s.Queries.GetAssignment(s.Ctx, int64(assignmentID))
+		savedAssignment, err := s.Queries.GetAssignment(ctx, int64(assignmentID))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -141,7 +145,7 @@ func HandleDeleteAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		err = s.Queries.DeleteAssignment(s.Ctx, int64(assignmentID))
+		err = s.Queries.DeleteAssignment(ctx, int64(assignmentID))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusInternalServerError)
 			return
@@ -167,7 +171,9 @@ func HandleUpdateAssignment(s *server.Server) http.HandlerFunc {
 		Status            int64  `json:"status"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -186,7 +192,7 @@ func HandleUpdateAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		savedAssignment, err := s.Queries.GetSession(s.Ctx, int64(assignmentID))
+		savedAssignment, err := s.Queries.GetSession(ctx, int64(assignmentID))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
@@ -229,7 +235,7 @@ func HandleUpdateAssignment(s *server.Server) http.HandlerFunc {
 			updateAssignmentParams.Status = sql.NullInt64{Int64: *updatedAssignment.Status, Valid: true}
 		}
 
-		assignment, err := s.Queries.UpdateAssignment(s.Ctx, updateAssignmentParams)
+		assignment, err := s.Queries.UpdateAssignment(ctx, updateAssignmentParams)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				s.RespondErrorStatus(w, r, http.StatusNotFound)
@@ -283,7 +289,9 @@ func handleListPatientAssignments(s *server.Server, patientUuidQueryParam string
 		Status          int64   `json:"status"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		_, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -307,13 +315,13 @@ func handleListPatientAssignments(s *server.Server, patientUuidQueryParam string
 
 		if pending && isPatient {
 			var list []db.ListPendingPatientAssignmentsRow
-			list, err = s.Queries.ListPendingPatientAssignments(s.Ctx, patientUuid)
+			list, err = s.Queries.ListPendingPatientAssignments(ctx, patientUuid)
 			for _, assignment := range list {
 				fetchedAssignments = append(fetchedAssignments, db.ListPatientAssignmentsRow(assignment))
 			}
 		} else if pending && !isPatient {
 			var list []db.ListPendingDoctorPatientAssignmentsRow
-			list, err = s.Queries.ListPendingDoctorPatientAssignments(s.Ctx, db.ListPendingDoctorPatientAssignmentsParams{
+			list, err = s.Queries.ListPendingDoctorPatientAssignments(ctx, db.ListPendingDoctorPatientAssignmentsParams{
 				DoctorUuid:  userUuid,
 				PatientUuid: patientUuid,
 			})
@@ -322,7 +330,7 @@ func handleListPatientAssignments(s *server.Server, patientUuidQueryParam string
 			}
 		} else if !isPatient {
 			var list []db.ListDoctorPatientAssignmentsRow
-			list, err = s.Queries.ListDoctorPatientAssignments(s.Ctx, db.ListDoctorPatientAssignmentsParams{
+			list, err = s.Queries.ListDoctorPatientAssignments(ctx, db.ListDoctorPatientAssignmentsParams{
 				DoctorUuid:  userUuid,
 				PatientUuid: patientUuid,
 			})
@@ -330,7 +338,7 @@ func handleListPatientAssignments(s *server.Server, patientUuidQueryParam string
 				fetchedAssignments = append(fetchedAssignments, db.ListPatientAssignmentsRow(assignment))
 			}
 		} else {
-			fetchedAssignments, err = s.Queries.ListPatientAssignments(s.Ctx, patientUuid)
+			fetchedAssignments, err = s.Queries.ListPatientAssignments(ctx, patientUuid)
 		}
 
 		if err != nil || fetchedAssignments == nil {

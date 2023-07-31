@@ -11,8 +11,6 @@ import (
 func main() {
 	s := server.NewServer()
 
-	initializers.InitializeContext(s)
-
 	if err := initializers.InitializeDB(s); err != nil {
 		log.Fatal(err)
 	}

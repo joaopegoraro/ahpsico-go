@@ -20,7 +20,9 @@ func HandleLoginUser(s *server.Server) http.HandlerFunc {
 		Status: http.StatusNotAcceptable,
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, userUuid, err := middlewares.GetAuthDataFromContext(r.Context())
+		ctx := r.Context()
+
+		user, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
 		if err != nil {
 			middlewares.RespondAuthError(w, r, s)
 			return
@@ -33,9 +35,9 @@ func HandleLoginUser(s *server.Server) http.HandlerFunc {
 			IsDoctor:    true,
 		}
 
-		doctor, err := s.Queries.GetDoctor(s.Ctx, userUuid)
+		doctor, err := s.Queries.GetDoctor(ctx, userUuid)
 		if err != nil {
-			patient, err := s.Queries.GetPatient(s.Ctx, userUuid)
+			patient, err := s.Queries.GetPatient(ctx, userUuid)
 			if err != nil {
 				s.RespondError(w, r, signUpRequiredError)
 				return
