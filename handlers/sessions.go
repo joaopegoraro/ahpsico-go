@@ -24,8 +24,8 @@ const (
 )
 const (
 	firstSessionStatus = notConfirmedStatus
-	_           = confirmedStatus
-	_           = canceledStatus
+	_                  = confirmedStatus
+	_                  = canceledStatus
 	lastSessionStatus  = concludedStatus
 )
 
@@ -352,67 +352,51 @@ func HandleListDoctorSessions(s *server.Server) http.HandlerFunc {
 
 		sessions := []response{}
 
+		fetchedSessions := []db.ListDoctorSessionsRow{}
 		if strings.TrimSpace(dateParam) == "" {
-			fetchedSessions, err := s.Queries.ListDoctorSessions(s.Ctx, doctorUuid)
-			if err != nil || fetchedSessions == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
-			}
-
-			for _, session := range fetchedSessions {
-				sessions = append(sessions, response{
-					ID:         session.SessionID,
-					GroupIndex: session.SessionGroupIndex,
-					Status:     session.SessionStatus,
-					Type:       session.SessionType,
-					Date:       session.SessionDate.Format(utils.DateFormat),
-					Patient: patient{
-						Uuid:        session.PatientUuid.String(),
-						Name:        session.PatientName,
-						PhoneNumber: session.PatientPhoneNumber,
-					},
-				})
-			}
+			fetchedSessions, err = s.Queries.ListDoctorSessions(s.Ctx, doctorUuid)
 		} else {
-			parsedDate, err := time.Parse(utils.DateFormat, dateParam)
+			var parsedDate time.Time
+			parsedDate, err = time.Parse(utils.DateFormat, dateParam)
 			if err != nil {
 				errMessage := fmt.Sprintf("date must be in the following format:  %s", utils.DateFormat)
 				s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
 				return
 			}
 
-			fetchedSessions, err := s.Queries.ListDoctorSessionsWithinDate(s.Ctx, db.ListDoctorSessionsWithinDateParams{
+			var list []db.ListDoctorSessionsWithinDateRow
+			list, err = s.Queries.ListDoctorSessionsWithinDate(s.Ctx, db.ListDoctorSessionsWithinDateParams{
 				DoctorUuid:  doctorUuid,
 				StartOfDate: utils.GetStartOfDay(parsedDate),
 				EndOfDate:   utils.GetEndOfDay(parsedDate),
 			})
-			if err != nil || fetchedSessions == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
+			for _, session := range list {
+				fetchedSessions = append(fetchedSessions, db.ListDoctorSessionsRow(session))
+			}
+		}
+
+		if err != nil || fetchedSessions == nil {
+			if err == sql.ErrNoRows {
+				s.RespondNoContent(w, r)
 				return
 			}
+			s.RespondErrorStatus(w, r, http.StatusNotFound)
+			return
+		}
 
-			for _, session := range fetchedSessions {
-				sessions = append(sessions, response{
-					ID:         session.SessionID,
-					GroupIndex: session.SessionGroupIndex,
-					Status:     session.SessionStatus,
-					Type:       session.SessionType,
-					Date:       session.SessionDate.Format(utils.DateFormat),
-					Patient: patient{
-						Uuid:        session.PatientUuid.String(),
-						Name:        session.PatientName,
-						PhoneNumber: session.PatientPhoneNumber,
-					},
-				})
-			}
+		for _, session := range fetchedSessions {
+			sessions = append(sessions, response{
+				ID:         session.SessionID,
+				GroupIndex: session.SessionGroupIndex,
+				Status:     session.SessionStatus,
+				Type:       session.SessionType,
+				Date:       session.SessionDate.Format(utils.DateFormat),
+				Patient: patient{
+					Uuid:        session.PatientUuid.String(),
+					Name:        session.PatientName,
+					PhoneNumber: session.PatientPhoneNumber,
+				},
+			})
 		}
 
 		if len(sessions) < 1 {
@@ -467,132 +451,62 @@ func HandleListPatientSessions(s *server.Server) http.HandlerFunc {
 
 		sessions := []response{}
 
+		fetchedSessions := []db.ListPatientSessionsRow{}
 		if upcoming && isPatient {
-			fetchedSessions, err := s.Queries.ListUpcomingPatientSessions(s.Ctx, patientUuid)
-			if err != nil || fetchedSessions == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
-			}
-
-			for _, session := range fetchedSessions {
-				sessions = append(sessions, response{
-					ID:         session.SessionID,
-					GroupIndex: session.SessionGroupIndex,
-					Status:     session.SessionStatus,
-					Type:       session.SessionType,
-					Date:       session.SessionDate.Format(utils.DateFormat),
-					Doctor: doctor{
-						Uuid:        session.DoctorUuid.String(),
-						Name:        session.DoctorName,
-						Description: session.DoctorDescription,
-					},
-					Patient: patient{
-						Uuid:        session.PatientUuid.String(),
-						Name:        session.PatientName,
-						PhoneNumber: session.PatientPhoneNumber,
-					},
-				})
+			var list []db.ListUpcomingPatientSessionsRow
+			list, err = s.Queries.ListUpcomingPatientSessions(s.Ctx, patientUuid)
+			for _, session := range list {
+				fetchedSessions = append(fetchedSessions, db.ListPatientSessionsRow(session))
 			}
 		} else if upcoming && !isPatient {
-			fetchedSessions, err := s.Queries.ListUpcomingDoctorPatientSessions(s.Ctx, db.ListUpcomingDoctorPatientSessionsParams{
+			var list []db.ListUpcomingDoctorPatientSessionsRow
+			list, err = s.Queries.ListUpcomingDoctorPatientSessions(s.Ctx, db.ListUpcomingDoctorPatientSessionsParams{
 				DoctorUuid:  userUuid,
 				PatientUuid: patientUuid,
 			})
-			if err != nil || fetchedSessions == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
-			}
-
-			for _, session := range fetchedSessions {
-				sessions = append(sessions, response{
-					ID:         session.SessionID,
-					GroupIndex: session.SessionGroupIndex,
-					Status:     session.SessionStatus,
-					Type:       session.SessionType,
-					Date:       session.SessionDate.Format(utils.DateFormat),
-					Doctor: doctor{
-						Uuid:        session.DoctorUuid.String(),
-						Name:        session.DoctorName,
-						Description: session.DoctorDescription,
-					},
-					Patient: patient{
-						Uuid:        session.PatientUuid.String(),
-						Name:        session.PatientName,
-						PhoneNumber: session.PatientPhoneNumber,
-					},
-				})
+			for _, session := range list {
+				fetchedSessions = append(fetchedSessions, db.ListPatientSessionsRow(session))
 			}
 		} else if !isPatient {
-			fetchedSessions, err := s.Queries.ListDoctorPatientSessions(s.Ctx, db.ListDoctorPatientSessionsParams{
+			var list []db.ListDoctorPatientSessionsRow
+			list, err = s.Queries.ListDoctorPatientSessions(s.Ctx, db.ListDoctorPatientSessionsParams{
 				DoctorUuid:  userUuid,
 				PatientUuid: patientUuid,
 			})
-			if err != nil || fetchedSessions == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
-			}
-
-			for _, session := range fetchedSessions {
-				sessions = append(sessions, response{
-					ID:         session.SessionID,
-					GroupIndex: session.SessionGroupIndex,
-					Status:     session.SessionStatus,
-					Type:       session.SessionType,
-					Date:       session.SessionDate.Format(utils.DateFormat),
-					Doctor: doctor{
-						Uuid:        session.DoctorUuid.String(),
-						Name:        session.DoctorName,
-						Description: session.DoctorDescription,
-					},
-					Patient: patient{
-						Uuid:        session.PatientUuid.String(),
-						Name:        session.PatientName,
-						PhoneNumber: session.PatientPhoneNumber,
-					},
-				})
+			for _, session := range list {
+				fetchedSessions = append(fetchedSessions, db.ListPatientSessionsRow(session))
 			}
 		} else {
-			fetchedSessions, err := s.Queries.ListPatientSessions(s.Ctx, patientUuid)
-			if err != nil || fetchedSessions == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
+			fetchedSessions, err = s.Queries.ListPatientSessions(s.Ctx, patientUuid)
+		}
+
+		if err != nil || fetchedSessions == nil {
+			if err == sql.ErrNoRows {
+				s.RespondNoContent(w, r)
 				return
 			}
+			s.RespondErrorStatus(w, r, http.StatusNotFound)
+			return
+		}
 
-			for _, session := range fetchedSessions {
-				sessions = append(sessions, response{
-					ID:         session.SessionID,
-					GroupIndex: session.SessionGroupIndex,
-					Status:     session.SessionStatus,
-					Type:       session.SessionType,
-					Date:       session.SessionDate.Format(utils.DateFormat),
-					Doctor: doctor{
-						Uuid:        session.DoctorUuid.String(),
-						Name:        session.DoctorName,
-						Description: session.DoctorDescription,
-					},
-					Patient: patient{
-						Uuid:        session.PatientUuid.String(),
-						Name:        session.PatientName,
-						PhoneNumber: session.PatientPhoneNumber,
-					},
-				})
-			}
+		for _, session := range fetchedSessions {
+			sessions = append(sessions, response{
+				ID:         session.SessionID,
+				GroupIndex: session.SessionGroupIndex,
+				Status:     session.SessionStatus,
+				Type:       session.SessionType,
+				Date:       session.SessionDate.Format(utils.DateFormat),
+				Doctor: doctor{
+					Uuid:        session.DoctorUuid.String(),
+					Name:        session.DoctorName,
+					Description: session.DoctorDescription,
+				},
+				Patient: patient{
+					Uuid:        session.PatientUuid.String(),
+					Name:        session.PatientName,
+					PhoneNumber: session.PatientPhoneNumber,
+				},
+			})
 		}
 
 		if len(sessions) < 1 {

@@ -44,7 +44,7 @@ SELECT
     p.phone_number as patient_phone_number
 FROM sessions s
     JOIN patients p ON patients.uuid = sessions.patient_uuid
-WHERE doctor_uuid = ?;
+WHERE s.doctor_uuid = ?;
 
 -- name: ListDoctorActiveSessions :many
 
@@ -64,19 +64,15 @@ SELECT
     s.type as session_type,
     s.status as session_status,
     s.created_at as session_created_at,
-    d.uuid as doctor_uuid,
-    d.name as doctor_name,
-    d.description as doctor_description,
     p.uuid as patient_uuid,
     p.name as patient_name,
     p.phone_number as patient_phone_number
 FROM sessions s
-    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
-    JOIN patients p ON patients.uuid = sessions.patient_uuid
+    JOIN patients p ON patients.uuid = s.patient_uuid
 WHERE
-    doctor_uuid = sqlc.arg ('doctor_uuid')
-    AND date >= sqlc.arg ('start_of_date')
-    AND date <= sqlc.arg ('end_of_date');
+    s.doctor_uuid = sqlc.arg ('doctor_uuid')
+    AND s.date >= sqlc.arg ('start_of_date')
+    AND s.date <= sqlc.arg ('end_of_date');
 
 -- name: ListPatientSessions :many
 

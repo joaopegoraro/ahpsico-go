@@ -32,8 +32,8 @@ func HandleListInvites(s *server.Server) http.HandlerFunc {
 
 		invites := []response{}
 
-		fetchedDoctorInvites, err := s.Queries.ListDoctorInvites(s.Ctx, userUuid)
-		if err != nil || len(fetchedDoctorInvites) == 0 {
+		fetchedInvites, err := s.Queries.ListDoctorInvites(s.Ctx, userUuid)
+		if err != nil || len(fetchedInvites) == 0 {
 			fetchedPatientInvites, err := s.Queries.ListPatientInvites(s.Ctx, userUuid)
 			if err != nil || len(fetchedPatientInvites) < 1 {
 				s.RespondNoContent(w, r)
@@ -41,30 +41,21 @@ func HandleListInvites(s *server.Server) http.HandlerFunc {
 			}
 
 			for _, invite := range fetchedPatientInvites {
-				invites = append(invites, response{
-					ID:          invite.InviteID,
-					PhoneNumber: invite.InvitePhoneNumber,
-					PatientUuid: invite.InvitePatientUuid.String(),
-					Doctor: doctor{
-						Uuid:        invite.DoctorUuid.String(),
-						Name:        invite.DoctorName,
-						Description: invite.DoctorDescription,
-					},
-				})
+				fetchedInvites = append(fetchedInvites, db.ListDoctorInvitesRow(invite))
 			}
-		} else {
-			for _, invite := range fetchedDoctorInvites {
-				invites = append(invites, response{
-					ID:          invite.InviteID,
-					PhoneNumber: invite.InvitePhoneNumber,
-					PatientUuid: invite.InvitePatientUuid.String(),
-					Doctor: doctor{
-						Uuid:        invite.DoctorUuid.String(),
-						Name:        invite.DoctorName,
-						Description: invite.DoctorDescription,
-					},
-				})
-			}
+		}
+
+		for _, invite := range fetchedInvites {
+			invites = append(invites, response{
+				ID:          invite.InviteID,
+				PhoneNumber: invite.InvitePhoneNumber,
+				PatientUuid: invite.InvitePatientUuid.String(),
+				Doctor: doctor{
+					Uuid:        invite.DoctorUuid.String(),
+					Name:        invite.DoctorName,
+					Description: invite.DoctorDescription,
+				},
+			})
 		}
 
 		if len(invites) < 1 {

@@ -292,129 +292,62 @@ func HandleListPatientAssignments(s *server.Server) http.HandlerFunc {
 		}
 
 		assignments := []response{}
+		fetchedAssignments := []db.ListPatientAssignmentsRow{}
 
 		if pending && isPatient {
-			fetchedAssignments, err := s.Queries.ListPendingPatientAssignments(s.Ctx, patientUuid)
-			if err != nil || fetchedAssignments == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
-			}
-
-			for _, assignment := range fetchedAssignments {
-				assignments = append(assignments, response{
-					ID:          assignment.AssignmentID,
-					Title:       assignment.AssignmentTitle,
-					Description: assignment.AssignmentDescription,
-					Status:      assignment.AssignmentStatus,
-					Doctor: doctor{
-						Uuid:        assignment.DoctorUuid.String(),
-						Name:        assignment.DoctorName,
-						Description: assignment.DoctorDescription,
-					},
-					PatientUuid: assignment.PatientUuid.String(),
-					DeliverySession: session{
-						ID:   assignment.SessionID,
-						Date: assignment.SessionDate.Format(utils.DateFormat),
-					},
-				})
+			var list []db.ListPendingPatientAssignmentsRow
+			list, err = s.Queries.ListPendingPatientAssignments(s.Ctx, patientUuid)
+			for _, assignment := range list {
+				fetchedAssignments = append(fetchedAssignments, db.ListPatientAssignmentsRow(assignment))
 			}
 		} else if pending && !isPatient {
-			fetchedAssignments, err := s.Queries.ListPendingDoctorPatientAssignments(s.Ctx, db.ListPendingDoctorPatientAssignmentsParams{
+			var list []db.ListPendingDoctorPatientAssignmentsRow
+			list, err = s.Queries.ListPendingDoctorPatientAssignments(s.Ctx, db.ListPendingDoctorPatientAssignmentsParams{
 				DoctorUuid:  userUuid,
 				PatientUuid: patientUuid,
 			})
-			if err != nil || fetchedAssignments == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
-			}
-
-			for _, assignment := range fetchedAssignments {
-				assignments = append(assignments, response{
-					ID:          assignment.AssignmentID,
-					Title:       assignment.AssignmentTitle,
-					Description: assignment.AssignmentDescription,
-					Status:      assignment.AssignmentStatus,
-					Doctor: doctor{
-						Uuid:        assignment.DoctorUuid.String(),
-						Name:        assignment.DoctorName,
-						Description: assignment.DoctorDescription,
-					},
-					PatientUuid: assignment.PatientUuid.String(),
-					DeliverySession: session{
-						ID:   assignment.SessionID,
-						Date: assignment.SessionDate.Format(utils.DateFormat),
-					},
-				})
+			for _, assignment := range list {
+				fetchedAssignments = append(fetchedAssignments, db.ListPatientAssignmentsRow(assignment))
 			}
 		} else if !isPatient {
-			fetchedAssignments, err := s.Queries.ListDoctorPatientAssignments(s.Ctx, db.ListDoctorPatientAssignmentsParams{
+			var list []db.ListDoctorPatientAssignmentsRow
+			list, err = s.Queries.ListDoctorPatientAssignments(s.Ctx, db.ListDoctorPatientAssignmentsParams{
 				DoctorUuid:  userUuid,
 				PatientUuid: patientUuid,
 			})
-			if err != nil || fetchedAssignments == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
-			}
-
-			for _, assignment := range fetchedAssignments {
-				assignments = append(assignments, response{
-					ID:          assignment.AssignmentID,
-					Title:       assignment.AssignmentTitle,
-					Description: assignment.AssignmentDescription,
-					Status:      assignment.AssignmentStatus,
-					Doctor: doctor{
-						Uuid:        assignment.DoctorUuid.String(),
-						Name:        assignment.DoctorName,
-						Description: assignment.DoctorDescription,
-					},
-					PatientUuid: assignment.PatientUuid.String(),
-					DeliverySession: session{
-						ID:   assignment.SessionID,
-						Date: assignment.SessionDate.Format(utils.DateFormat),
-					},
-				})
+			for _, assignment := range list {
+				fetchedAssignments = append(fetchedAssignments, db.ListPatientAssignmentsRow(assignment))
 			}
 		} else {
-			fetchedAssignments, err := s.Queries.ListPatientAssignments(s.Ctx, patientUuid)
-			if err != nil || fetchedAssignments == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
+			fetchedAssignments, err = s.Queries.ListPatientAssignments(s.Ctx, patientUuid)
+		}
+
+		if err != nil || fetchedAssignments == nil {
+			if err == sql.ErrNoRows {
+				s.RespondNoContent(w, r)
 				return
 			}
+			s.RespondErrorStatus(w, r, http.StatusNotFound)
+			return
+		}
 
-			for _, assignment := range fetchedAssignments {
-				assignments = append(assignments, response{
-					ID:          assignment.AssignmentID,
-					Title:       assignment.AssignmentTitle,
-					Description: assignment.AssignmentDescription,
-					Status:      assignment.AssignmentStatus,
-					Doctor: doctor{
-						Uuid:        assignment.DoctorUuid.String(),
-						Name:        assignment.DoctorName,
-						Description: assignment.DoctorDescription,
-					},
-					PatientUuid: assignment.PatientUuid.String(),
-					DeliverySession: session{
-						ID:   assignment.SessionID,
-						Date: assignment.SessionDate.Format(utils.DateFormat),
-					},
-				})
-			}
+		for _, assignment := range fetchedAssignments {
+			assignments = append(assignments, response{
+				ID:          assignment.AssignmentID,
+				Title:       assignment.AssignmentTitle,
+				Description: assignment.AssignmentDescription,
+				Status:      assignment.AssignmentStatus,
+				Doctor: doctor{
+					Uuid:        assignment.DoctorUuid.String(),
+					Name:        assignment.DoctorName,
+					Description: assignment.DoctorDescription,
+				},
+				PatientUuid: assignment.PatientUuid.String(),
+				DeliverySession: session{
+					ID:   assignment.SessionID,
+					Date: assignment.SessionDate.Format(utils.DateFormat),
+				},
+			})
 		}
 
 		if len(assignments) < 1 {

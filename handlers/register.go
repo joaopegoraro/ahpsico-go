@@ -60,20 +60,17 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 				Name:        newUser.UserName,
 				PhoneNumber: user.PhoneNumber,
 			})
-			if err != nil {
-				s.RespondErrorStatus(w, r, http.StatusBadRequest)
-				return
-			}
 		} else {
 			_, err = s.Queries.CreatePatient(s.Ctx, db.CreatePatientParams{
 				Uuid:        userUuid,
 				Name:        newUser.UserName,
 				PhoneNumber: user.PhoneNumber,
 			})
-			if err != nil {
-				s.RespondErrorStatus(w, r, http.StatusBadRequest)
-				return
-			}
+		}
+
+		if err != nil {
+			s.RespondErrorStatus(w, r, http.StatusBadRequest)
+			return
 		}
 
 		response := response{

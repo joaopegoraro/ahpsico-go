@@ -305,7 +305,7 @@ SELECT
     p.phone_number as patient_phone_number
 FROM sessions s
     JOIN patients p ON patients.uuid = sessions.patient_uuid
-WHERE doctor_uuid = ?
+WHERE s.doctor_uuid = ?
 `
 
 type ListDoctorSessionsRow struct {
@@ -362,19 +362,15 @@ SELECT
     s.type as session_type,
     s.status as session_status,
     s.created_at as session_created_at,
-    d.uuid as doctor_uuid,
-    d.name as doctor_name,
-    d.description as doctor_description,
     p.uuid as patient_uuid,
     p.name as patient_name,
     p.phone_number as patient_phone_number
 FROM sessions s
-    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
-    JOIN patients p ON patients.uuid = sessions.patient_uuid
+    JOIN patients p ON patients.uuid = s.patient_uuid
 WHERE
-    doctor_uuid = ?1
-    AND date >= ?2
-    AND date <= ?3
+    s.doctor_uuid = ?1
+    AND s.date >= ?2
+    AND s.date <= ?3
 `
 
 type ListDoctorSessionsWithinDateParams struct {
@@ -390,9 +386,6 @@ type ListDoctorSessionsWithinDateRow struct {
 	SessionType        int64
 	SessionStatus      int64
 	SessionCreatedAt   time.Time
-	DoctorUuid         uuid.UUID
-	DoctorName         string
-	DoctorDescription  string
 	PatientUuid        uuid.UUID
 	PatientName        string
 	PatientPhoneNumber string
@@ -414,9 +407,6 @@ func (q *Queries) ListDoctorSessionsWithinDate(ctx context.Context, arg ListDoct
 			&i.SessionType,
 			&i.SessionStatus,
 			&i.SessionCreatedAt,
-			&i.DoctorUuid,
-			&i.DoctorName,
-			&i.DoctorDescription,
 			&i.PatientUuid,
 			&i.PatientName,
 			&i.PatientPhoneNumber,

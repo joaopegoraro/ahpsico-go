@@ -237,57 +237,37 @@ func HandleListPatientAdvices(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		advices := []response{}
-
+		var fetchedAdvices []db.ListPatientAdvicesRow
 		if userUuid == patientUuid {
-			fetchedAdvices, err := s.Queries.ListPatientAdvices(s.Ctx, patientUuid)
-			if err != nil || fetchedAdvices == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
-			}
-
-			for _, fetchedAdvice := range fetchedAdvices {
-				advices = append(advices, response{
-					ID:          fetchedAdvice.AdviceID,
-					Message:     fetchedAdvice.AdviceMessage,
-					PatientUuid: patientUuid.String(),
-					Doctor: doctor{
-						Uuid: fetchedAdvice.DoctorUuid.String(),
-						Name: fetchedAdvice.DoctorName,
-					},
-					CreatedAt: fetchedAdvice.AdviceCreatedAt.Format(utils.DateFormat),
-				})
-			}
+			fetchedAdvices, err = s.Queries.ListPatientAdvices(s.Ctx, patientUuid)
 		} else {
-			fetchedAdvices, err := s.Queries.ListDoctorPatientAdvices(s.Ctx, db.ListDoctorPatientAdvicesParams{
+			var list []db.ListDoctorPatientAdvicesRow
+			list, err = s.Queries.ListDoctorPatientAdvices(s.Ctx, db.ListDoctorPatientAdvicesParams{
 				PatientUuid: patientUuid,
 				DoctorUuid:  userUuid,
 			})
-			if err != nil || fetchedAdvices == nil {
-				if err == sql.ErrNoRows {
-					s.RespondNoContent(w, r)
-					return
-				}
-				s.RespondErrorStatus(w, r, http.StatusNotFound)
-				return
+			for _, advice := range list {
+				fetchedAdvices = append(fetchedAdvices, db.ListPatientAdvicesRow(advice))
 			}
+		}
 
-			for _, fetchedAdvice := range fetchedAdvices {
-				advices = append(advices, response{
-					ID:          fetchedAdvice.AdviceID,
-					Message:     fetchedAdvice.AdviceMessage,
-					PatientUuid: patientUuid.String(),
-					Doctor: doctor{
-						Uuid: fetchedAdvice.DoctorUuid.String(),
-						Name: fetchedAdvice.DoctorName,
-					},
-					CreatedAt: fetchedAdvice.AdviceCreatedAt.Format(utils.DateFormat),
-				})
-			}
+		if err != nil {
+			s.RespondErrorStatus(w, r, http.StatusNotFound)
+			return
+		}
+
+		advices := []response{}
+		for _, fetchedAdvice := range fetchedAdvices {
+			advices = append(advices, response{
+				ID:          fetchedAdvice.AdviceID,
+				Message:     fetchedAdvice.AdviceMessage,
+				PatientUuid: patientUuid.String(),
+				Doctor: doctor{
+					Uuid: fetchedAdvice.DoctorUuid.String(),
+					Name: fetchedAdvice.DoctorName,
+				},
+				CreatedAt: fetchedAdvice.AdviceCreatedAt.Format(utils.DateFormat),
+			})
 		}
 
 		if len(advices) < 1 {
