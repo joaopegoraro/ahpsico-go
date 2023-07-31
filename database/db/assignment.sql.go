@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/gofrs/uuid"
 )
@@ -69,13 +70,47 @@ func (q *Queries) DeleteAssignment(ctx context.Context, id int64) error {
 	return err
 }
 
+const getAssignment = `-- name: GetAssignment :one
+
+SELECT assignments.id, assignments.title, assignments.description, assignments.patient_uuid, assignments.doctor_uuid, assignments.session_id, assignments.status, assignments.created_at, assignments.updated_at FROM assignments WHERE id = ?
+`
+
+func (q *Queries) GetAssignment(ctx context.Context, id int64) (Assignment, error) {
+	row := q.db.QueryRowContext(ctx, getAssignment, id)
+	var i Assignment
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.PatientUuid,
+		&i.DoctorUuid,
+		&i.SessionID,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listDoctorPatientAssignments = `-- name: ListDoctorPatientAssignments :many
 
-SELECT assignments.id, assignments.title, assignments.description, assignments.patient_uuid, assignments.doctor_uuid, assignments.session_id, assignments.status, assignments.created_at, assignments.updated_at
+SELECT
+    assignments.id as assignment_id,
+    assignments.title as assignment_title,
+    assignments.description as assignment_description,
+    assignments.status as assignment_status,
+    assignments.patient_uuid as patient_uuid,
+    sessions.id as session_id,
+    sessions.date as session_date,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
 FROM assignments
+    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN sessions ON sessions.id = assignments.session_id
 WHERE
-    patient_uuid = ?
-    AND doctor_uuid = ?
+    assignments.patient_uuid = ?
+    AND assignments.doctor_uuid = ?
 `
 
 type ListDoctorPatientAssignmentsParams struct {
@@ -83,25 +118,39 @@ type ListDoctorPatientAssignmentsParams struct {
 	DoctorUuid  uuid.UUID
 }
 
-func (q *Queries) ListDoctorPatientAssignments(ctx context.Context, arg ListDoctorPatientAssignmentsParams) ([]Assignment, error) {
+type ListDoctorPatientAssignmentsRow struct {
+	AssignmentID          int64
+	AssignmentTitle       string
+	AssignmentDescription string
+	AssignmentStatus      int64
+	PatientUuid           uuid.UUID
+	SessionID             int64
+	SessionDate           time.Time
+	DoctorUuid            uuid.UUID
+	DoctorName            string
+	DoctorDescription     string
+}
+
+func (q *Queries) ListDoctorPatientAssignments(ctx context.Context, arg ListDoctorPatientAssignmentsParams) ([]ListDoctorPatientAssignmentsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listDoctorPatientAssignments, arg.PatientUuid, arg.DoctorUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Assignment
+	var items []ListDoctorPatientAssignmentsRow
 	for rows.Next() {
-		var i Assignment
+		var i ListDoctorPatientAssignmentsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Description,
+			&i.AssignmentID,
+			&i.AssignmentTitle,
+			&i.AssignmentDescription,
+			&i.AssignmentStatus,
 			&i.PatientUuid,
-			&i.DoctorUuid,
 			&i.SessionID,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.SessionDate,
+			&i.DoctorUuid,
+			&i.DoctorName,
+			&i.DoctorDescription,
 		); err != nil {
 			return nil, err
 		}
@@ -118,28 +167,57 @@ func (q *Queries) ListDoctorPatientAssignments(ctx context.Context, arg ListDoct
 
 const listPatientAssignments = `-- name: ListPatientAssignments :many
 
-SELECT assignments.id, assignments.title, assignments.description, assignments.patient_uuid, assignments.doctor_uuid, assignments.session_id, assignments.status, assignments.created_at, assignments.updated_at FROM assignments WHERE patient_uuid = ?
+SELECT
+    assignments.id as assignment_id,
+    assignments.title as assignment_title,
+    assignments.description as assignment_description,
+    assignments.status as assignment_status,
+    assignments.patient_uuid as patient_uuid,
+    sessions.id as session_id,
+    sessions.date as session_date,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
+FROM assignments
+    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN sessions ON sessions.id = assignments.session_id
+WHERE
+    assignments.patient_uuid = ?
 `
 
-func (q *Queries) ListPatientAssignments(ctx context.Context, patientUuid uuid.UUID) ([]Assignment, error) {
+type ListPatientAssignmentsRow struct {
+	AssignmentID          int64
+	AssignmentTitle       string
+	AssignmentDescription string
+	AssignmentStatus      int64
+	PatientUuid           uuid.UUID
+	SessionID             int64
+	SessionDate           time.Time
+	DoctorUuid            uuid.UUID
+	DoctorName            string
+	DoctorDescription     string
+}
+
+func (q *Queries) ListPatientAssignments(ctx context.Context, patientUuid uuid.UUID) ([]ListPatientAssignmentsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listPatientAssignments, patientUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Assignment
+	var items []ListPatientAssignmentsRow
 	for rows.Next() {
-		var i Assignment
+		var i ListPatientAssignmentsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Description,
+			&i.AssignmentID,
+			&i.AssignmentTitle,
+			&i.AssignmentDescription,
+			&i.AssignmentStatus,
 			&i.PatientUuid,
-			&i.DoctorUuid,
 			&i.SessionID,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.SessionDate,
+			&i.DoctorUuid,
+			&i.DoctorName,
+			&i.DoctorDescription,
 		); err != nil {
 			return nil, err
 		}
@@ -156,12 +234,24 @@ func (q *Queries) ListPatientAssignments(ctx context.Context, patientUuid uuid.U
 
 const listPendingDoctorPatientAssignments = `-- name: ListPendingDoctorPatientAssignments :many
 
-SELECT assignments.id, assignments.title, assignments.description, assignments.patient_uuid, assignments.doctor_uuid, assignments.session_id, assignments.status, assignments.created_at, assignments.updated_at
+SELECT
+    assignments.id as assignment_id,
+    assignments.title as assignment_title,
+    assignments.description as assignment_description,
+    assignments.status as assignment_status,
+    assignments.patient_uuid as patient_uuid,
+    sessions.id as session_id,
+    sessions.date as session_date,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
 FROM assignments
+    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN sessions ON sessions.id = assignments.session_id
 WHERE
-    patient_uuid = ?
-    AND doctor_uuid = ?
-    AND status = 0
+    assignments.patient_uuid = ?
+    AND assignments.doctor_uuid = ?
+    AND assignments.status = 0
 `
 
 type ListPendingDoctorPatientAssignmentsParams struct {
@@ -169,25 +259,39 @@ type ListPendingDoctorPatientAssignmentsParams struct {
 	DoctorUuid  uuid.UUID
 }
 
-func (q *Queries) ListPendingDoctorPatientAssignments(ctx context.Context, arg ListPendingDoctorPatientAssignmentsParams) ([]Assignment, error) {
+type ListPendingDoctorPatientAssignmentsRow struct {
+	AssignmentID          int64
+	AssignmentTitle       string
+	AssignmentDescription string
+	AssignmentStatus      int64
+	PatientUuid           uuid.UUID
+	SessionID             int64
+	SessionDate           time.Time
+	DoctorUuid            uuid.UUID
+	DoctorName            string
+	DoctorDescription     string
+}
+
+func (q *Queries) ListPendingDoctorPatientAssignments(ctx context.Context, arg ListPendingDoctorPatientAssignmentsParams) ([]ListPendingDoctorPatientAssignmentsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listPendingDoctorPatientAssignments, arg.PatientUuid, arg.DoctorUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Assignment
+	var items []ListPendingDoctorPatientAssignmentsRow
 	for rows.Next() {
-		var i Assignment
+		var i ListPendingDoctorPatientAssignmentsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Description,
+			&i.AssignmentID,
+			&i.AssignmentTitle,
+			&i.AssignmentDescription,
+			&i.AssignmentStatus,
 			&i.PatientUuid,
-			&i.DoctorUuid,
 			&i.SessionID,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.SessionDate,
+			&i.DoctorUuid,
+			&i.DoctorName,
+			&i.DoctorDescription,
 		); err != nil {
 			return nil, err
 		}
@@ -204,32 +308,58 @@ func (q *Queries) ListPendingDoctorPatientAssignments(ctx context.Context, arg L
 
 const listPendingPatientAssignments = `-- name: ListPendingPatientAssignments :many
 
-SELECT assignments.id, assignments.title, assignments.description, assignments.patient_uuid, assignments.doctor_uuid, assignments.session_id, assignments.status, assignments.created_at, assignments.updated_at
+SELECT
+    assignments.id as assignment_id,
+    assignments.title as assignment_title,
+    assignments.description as assignment_description,
+    assignments.status as assignment_status,
+    assignments.patient_uuid as patient_uuid,
+    sessions.id as session_id,
+    sessions.date as session_date,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
 FROM assignments
+    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN sessions ON sessions.id = assignments.session_id
 WHERE
-    patient_uuid = ?
-    AND status = 0
+    assignments.patient_uuid = ?
+    AND assignments.status = 0
 `
 
-func (q *Queries) ListPendingPatientAssignments(ctx context.Context, patientUuid uuid.UUID) ([]Assignment, error) {
+type ListPendingPatientAssignmentsRow struct {
+	AssignmentID          int64
+	AssignmentTitle       string
+	AssignmentDescription string
+	AssignmentStatus      int64
+	PatientUuid           uuid.UUID
+	SessionID             int64
+	SessionDate           time.Time
+	DoctorUuid            uuid.UUID
+	DoctorName            string
+	DoctorDescription     string
+}
+
+func (q *Queries) ListPendingPatientAssignments(ctx context.Context, patientUuid uuid.UUID) ([]ListPendingPatientAssignmentsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listPendingPatientAssignments, patientUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Assignment
+	var items []ListPendingPatientAssignmentsRow
 	for rows.Next() {
-		var i Assignment
+		var i ListPendingPatientAssignmentsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Description,
+			&i.AssignmentID,
+			&i.AssignmentTitle,
+			&i.AssignmentDescription,
+			&i.AssignmentStatus,
 			&i.PatientUuid,
-			&i.DoctorUuid,
 			&i.SessionID,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.SessionDate,
+			&i.DoctorUuid,
+			&i.DoctorName,
+			&i.DoctorDescription,
 		); err != nil {
 			return nil, err
 		}

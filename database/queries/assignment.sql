@@ -1,31 +1,86 @@
+-- name: GetAssignment :one
+
+SELECT assignments.* FROM assignments WHERE id = ?;
+
 -- name: ListPatientAssignments :many
 
-SELECT assignments.* FROM assignments WHERE patient_uuid = ?;
+SELECT
+    assignments.id as assignment_id,
+    assignments.title as assignment_title,
+    assignments.description as assignment_description,
+    assignments.status as assignment_status,
+    assignments.patient_uuid as patient_uuid,
+    sessions.id as session_id,
+    sessions.date as session_date,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
+FROM assignments
+    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN sessions ON sessions.id = assignments.session_id
+WHERE
+    assignments.patient_uuid = ?;
 
 -- name: ListDoctorPatientAssignments :many
 
-SELECT assignments.*
+SELECT
+    assignments.id as assignment_id,
+    assignments.title as assignment_title,
+    assignments.description as assignment_description,
+    assignments.status as assignment_status,
+    assignments.patient_uuid as patient_uuid,
+    sessions.id as session_id,
+    sessions.date as session_date,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
 FROM assignments
+    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN sessions ON sessions.id = assignments.session_id
 WHERE
-    patient_uuid = ?
-    AND doctor_uuid = ?;
+    assignments.patient_uuid = ?
+    AND assignments.doctor_uuid = ?;
 
 -- name: ListPendingDoctorPatientAssignments :many
 
-SELECT assignments.*
+SELECT
+    assignments.id as assignment_id,
+    assignments.title as assignment_title,
+    assignments.description as assignment_description,
+    assignments.status as assignment_status,
+    assignments.patient_uuid as patient_uuid,
+    sessions.id as session_id,
+    sessions.date as session_date,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
 FROM assignments
+    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN sessions ON sessions.id = assignments.session_id
 WHERE
-    patient_uuid = ?
-    AND doctor_uuid = ?
-    AND status = 0;
+    assignments.patient_uuid = ?
+    AND assignments.doctor_uuid = ?
+    AND assignments.status = 0;
 
 -- name: ListPendingPatientAssignments :many
 
-SELECT assignments.*
+SELECT
+    assignments.id as assignment_id,
+    assignments.title as assignment_title,
+    assignments.description as assignment_description,
+    assignments.status as assignment_status,
+    assignments.patient_uuid as patient_uuid,
+    sessions.id as session_id,
+    sessions.date as session_date,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description
 FROM assignments
+    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN sessions ON sessions.id = assignments.session_id
 WHERE
-    patient_uuid = ?
-    AND status = 0;
+    assignments.patient_uuid = ?
+    AND assignments.status = 0;
 
 -- name: CreateAssignment :one
 

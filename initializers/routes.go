@@ -33,7 +33,12 @@ func InitializeRoutes(s *server.Server) {
 
 	s.Router.Get("/sessions/{id}", handlers.HandleShowSession(s))
 	s.Router.Put("/sessions/{id}", handlers.HandleUpdateSession(s))
-	s.Router.Post("/sessions", handlers.HandleCreateSession(s))
 	s.Router.Get("/sessions?doctorUuid={doctorUuid}&date={date}", handlers.HandleListDoctorSessions(s))
 	s.Router.Get("/sessions?patientUuid={patientUuid}&upcoming={upcoming}", handlers.HandleListPatientSessions(s))
+	s.Router.Post("/sessions", handlers.HandleCreateSession(s))
+
+	s.Router.Put("/assignments/{id}", handlers.HandleUpdateAssignment(s))
+	s.Router.Delete("/assignments/{id}", handlers.HandleDeleteAssignment(s))
+	s.Router.Get("/assignments?patientUuid={patientUuid}&pending={pending}", handlers.HandleListPatientAssignments(s))
+	s.Router.Post("/assignments", handlers.HandleCreateAssignment(s))
 }

@@ -23,10 +23,10 @@ const (
 	concludedStatus
 )
 const (
-	firstStatus = notConfirmedStatus
+	firstSessionStatus = notConfirmedStatus
 	_           = confirmedStatus
 	_           = canceledStatus
-	lastStatus  = concludedStatus
+	lastSessionStatus  = concludedStatus
 )
 
 const (
@@ -156,8 +156,8 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		if createdSession.Status < firstStatus || createdSession.Status > lastStatus {
-			errMessage := fmt.Sprintf("status must be between %d and %d", firstStatus, lastStatus)
+		if createdSession.Status < firstSessionStatus || createdSession.Status > lastSessionStatus {
+			errMessage := fmt.Sprintf("status must be between %d and %d", firstSessionStatus, lastSessionStatus)
 			s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
 			return
 		}
@@ -265,8 +265,8 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 		}
 
 		if updatedSession.Status != nil {
-			if *updatedSession.Status < firstStatus || *updatedSession.Status > lastStatus {
-				errMessage := fmt.Sprintf("status must be between %d and %d", firstStatus, lastStatus)
+			if *updatedSession.Status < firstSessionStatus || *updatedSession.Status > lastSessionStatus {
+				errMessage := fmt.Sprintf("status must be between %d and %d", firstSessionStatus, lastSessionStatus)
 				s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
 				return
 			}
