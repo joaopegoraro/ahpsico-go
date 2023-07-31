@@ -37,7 +37,7 @@ SELECT
     doctors.description as doctor_description
 FROM invites
     JOIN doctors on doctors.uuid = invites.doctor_uuid
-WHERE patient_uuid = ?;
+WHERE invites.patient_uuid = ?;
 
 -- name: CreateInvite :one
 
