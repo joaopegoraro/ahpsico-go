@@ -138,7 +138,25 @@ func HandleCreateAdvice(s *server.Server) http.HandlerFunc {
 	}
 }
 
-func HandleListDoctorAdvices(s *server.Server) http.HandlerFunc {
+func HandleListAdvices(s *server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		doctorUuidQueryParam := r.URL.Query().Get("doctorUuid")
+		if strings.TrimSpace(doctorUuidQueryParam) != "" {
+			handleListDoctorAdvices(s, doctorUuidQueryParam)(w, r)
+			return
+		}
+
+		patientUuidQueryParam := r.URL.Query().Get("patientUuid")
+		if strings.TrimSpace(patientUuidQueryParam) != "" {
+			handleListPatientAdvices(s, patientUuidQueryParam)(w, r)
+			return
+		}
+
+		s.RespondErrorStatus(w, r, http.StatusNotFound)
+	}
+}
+
+func handleListDoctorAdvices(s *server.Server, doctorUuidQueryParam string) http.HandlerFunc {
 	type doctor struct {
 		Uuid string `json:"uuid"`
 		Name string `json:"name"`
@@ -157,7 +175,6 @@ func HandleListDoctorAdvices(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		doctorUuidQueryParam := r.URL.Query().Get("doctorUuid")
 		doctorUuid, err := uuid.FromString(doctorUuidQueryParam)
 		if err != nil || doctorUuid == uuid.Nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
@@ -211,7 +228,7 @@ func HandleListDoctorAdvices(s *server.Server) http.HandlerFunc {
 
 }
 
-func HandleListPatientAdvices(s *server.Server) http.HandlerFunc {
+func handleListPatientAdvices(s *server.Server, patientUuidQueryParam string) http.HandlerFunc {
 	type doctor struct {
 		Uuid string `json:"uuid"`
 		Name string `json:"name"`
@@ -230,7 +247,6 @@ func HandleListPatientAdvices(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		patientUuidQueryParam := r.URL.Query().Get("patientUuid")
 		patientUuid, err := uuid.FromString(patientUuidQueryParam)
 		if err != nil || patientUuid == uuid.Nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -109,7 +110,19 @@ func HandleCreateSchedule(s *server.Server) http.HandlerFunc {
 	}
 }
 
-func HandleListDoctorSchedule(s *server.Server) http.HandlerFunc {
+func HandleListSchedule(s *server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		doctorUuidQueryParam := r.URL.Query().Get("doctorUuid")
+		if strings.TrimSpace(doctorUuidQueryParam) != "" {
+			handleListDoctorSchedule(s, doctorUuidQueryParam)(w, r)
+			return
+		}
+
+		s.RespondErrorStatus(w, r, http.StatusNotFound)
+	}
+}
+
+func handleListDoctorSchedule(s *server.Server, doctorUuidQueryParam string) http.HandlerFunc {
 	type response struct {
 		ID         int64  `json:"id"`
 		DoctorUuid string `json:"doctorUuid"`
@@ -117,7 +130,6 @@ func HandleListDoctorSchedule(s *server.Server) http.HandlerFunc {
 		IsSession  bool   `json:"isSession"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		doctorUuidQueryParam := r.URL.Query().Get("doctorUuid")
 		doctorUuid, err := uuid.FromString(doctorUuidQueryParam)
 		if err != nil || doctorUuid == uuid.Nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)

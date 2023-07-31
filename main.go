@@ -21,5 +21,7 @@ func main() {
 
 	initializers.InitializeRoutes(s)
 
+	log.Print("Serving on :8000")
+
 	log.Fatal(http.ListenAndServe(":8000", s.Router))
 }

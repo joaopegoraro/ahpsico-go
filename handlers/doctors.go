@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
@@ -137,7 +138,19 @@ func HandleUpdateDoctor(s *server.Server) http.HandlerFunc {
 	}
 }
 
-func HandleListPatientDoctors(s *server.Server) http.HandlerFunc {
+func HandleListDoctors(s *server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		patientUuidQueryParam := r.URL.Query().Get("patientUuid")
+		if strings.TrimSpace(patientUuidQueryParam) != "" {
+			handleListPatientDoctors(s, patientUuidQueryParam)(w, r)
+			return
+		}
+
+		s.RespondErrorStatus(w, r, http.StatusNotFound)
+	}
+}
+
+func handleListPatientDoctors(s *server.Server, patientUuidQueryParam string) http.HandlerFunc {
 	type response struct {
 		Uuid           string `json:"uuid"`
 		Name           string `json:"name"`
@@ -154,7 +167,6 @@ func HandleListPatientDoctors(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		patientUuidQueryParam := r.URL.Query().Get("patientUuid")
 		patientUuid, err := uuid.FromString(patientUuidQueryParam)
 		if err != nil || patientUuid == uuid.Nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)

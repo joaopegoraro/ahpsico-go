@@ -115,7 +115,19 @@ func HandleUpdatePatient(s *server.Server) http.HandlerFunc {
 	}
 }
 
-func HandleListDoctorPatients(s *server.Server) http.HandlerFunc {
+func HandleListPatients(s *server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		doctorUuidQueryParam := r.URL.Query().Get("doctorUuid")
+		if strings.TrimSpace(doctorUuidQueryParam) != "" {
+			handleListDoctorPatients(s, doctorUuidQueryParam)(w, r)
+			return
+		}
+
+		s.RespondErrorStatus(w, r, http.StatusNotFound)
+	}
+}
+
+func handleListDoctorPatients(s *server.Server, doctorUuidQueryParam string) http.HandlerFunc {
 	type response struct {
 		Uuid        string `json:"uuid"`
 		Name        string `json:"name"`
@@ -128,7 +140,6 @@ func HandleListDoctorPatients(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		doctorUuidQueryParam := r.URL.Query().Get("doctorUuid")
 		doctorUuid, err := uuid.FromString(doctorUuidQueryParam)
 		if err != nil || doctorUuid == uuid.Nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)

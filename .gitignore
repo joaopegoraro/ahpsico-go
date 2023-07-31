@@ -23,3 +23,5 @@ go.work
 # database
 database/*.sqlite
 database/*.sqlite3
+
+*.json
