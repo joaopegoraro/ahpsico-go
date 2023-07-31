@@ -22,16 +22,11 @@ type AuthUser struct {
 func Auth(s *server.Server) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Get the authorization Token.
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
+			idToken, err := getIdTokenFromRequest(r)
+			if err != nil {
 				RespondAuthError(w, r, s)
 				return
 			}
-
-			// Removes the 'Bearer' prefix of the token
-			idTokenSlice := strings.Split(authHeader, " ")
-			idToken := idTokenSlice[1]
 
 			// Get the firebase auth client
 			auth, err := s.Firebase.Auth(s.Ctx)
@@ -64,6 +59,20 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(requestContext))
 		})
 	}
+}
+
+func getIdTokenFromRequest(r *http.Request) (string, error) {
+	// Get the authorization Token.
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("empty auth header")
+	}
+
+	// Removes the 'Bearer' prefix of the token
+	idTokenSlice := strings.Split(authHeader, " ")
+	idToken := idTokenSlice[1]
+
+	return idToken, nil
 }
 
 func GetAuthDataFromContext(ctx context.Context) (AuthUser, uuid.UUID, error) {
