@@ -46,7 +46,7 @@ func (q *Queries) DeleteAdvice(ctx context.Context, id int64) error {
 
 const getAdvice = `-- name: GetAdvice :one
 
-SELECT id, message, doctor_uuid, created_at FROM advices WHERE id = ?
+SELECT id, message, doctor_uuid, created_at FROM advices WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetAdvice(ctx context.Context, id int64) (Advice, error) {

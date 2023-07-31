@@ -179,6 +179,49 @@ func (q *Queries) GetSessionWithParticipants(ctx context.Context, id int64) (Get
 	return i, err
 }
 
+const listDoctorActivSessions = `-- name: ListDoctorActivSessions :many
+
+SELECT id, patient_uuid, doctor_uuid, date, group_index, type, status, created_at, updated_at
+FROM sessions
+WHERE
+    doctor_uuid = ?
+    AND status != 2
+    AND status != 3
+`
+
+func (q *Queries) ListDoctorActivSessions(ctx context.Context, doctorUuid uuid.UUID) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listDoctorActivSessions, doctorUuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientUuid,
+			&i.DoctorUuid,
+			&i.Date,
+			&i.GroupIndex,
+			&i.Type,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDoctorPatientSessions = `-- name: ListDoctorPatientSessions :many
 
 SELECT

@@ -12,9 +12,9 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-const createSchedule = `-- name: CreateSchedule :exec
+const createSchedule = `-- name: CreateSchedule :one
 
-INSERT INTO schedule (doctor_uuid, date) VALUES (?, ?)
+INSERT INTO schedule (doctor_uuid, date) VALUES (?, ?) RETURNING id, doctor_uuid, date, created_at, updated_at
 `
 
 type CreateScheduleParams struct {
@@ -22,9 +22,17 @@ type CreateScheduleParams struct {
 	Date       time.Time
 }
 
-func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) error {
-	_, err := q.db.ExecContext(ctx, createSchedule, arg.DoctorUuid, arg.Date)
-	return err
+func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Schedule, error) {
+	row := q.db.QueryRowContext(ctx, createSchedule, arg.DoctorUuid, arg.Date)
+	var i Schedule
+	err := row.Scan(
+		&i.ID,
+		&i.DoctorUuid,
+		&i.Date,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const deleteSchedule = `-- name: DeleteSchedule :exec
@@ -35,6 +43,24 @@ DELETE FROM schedule WHERE id = ?
 func (q *Queries) DeleteSchedule(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteSchedule, id)
 	return err
+}
+
+const getSchedule = `-- name: GetSchedule :one
+
+SELECT id, doctor_uuid, date, created_at, updated_at FROM schedule WHERE id = ? LIMIT 1
+`
+
+func (q *Queries) GetSchedule(ctx context.Context, id int64) (Schedule, error) {
+	row := q.db.QueryRowContext(ctx, getSchedule, id)
+	var i Schedule
+	err := row.Scan(
+		&i.ID,
+		&i.DoctorUuid,
+		&i.Date,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const listDoctorSchedule = `-- name: ListDoctorSchedule :many

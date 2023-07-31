@@ -59,6 +59,7 @@ FROM invites
 WHERE
     invites.doctor_uuid = ?
     AND invites.phone_number = ?
+LIMIT 1
 `
 
 type GetDoctorInviteByPhoneNumberParams struct {
@@ -81,7 +82,7 @@ func (q *Queries) GetDoctorInviteByPhoneNumber(ctx context.Context, arg GetDocto
 
 const getInvite = `-- name: GetInvite :one
 
-SELECT invites.id, invites.phone_number, invites.patient_uuid, invites.doctor_uuid, invites.created_at FROM invites WHERE invites.id = ?
+SELECT invites.id, invites.phone_number, invites.patient_uuid, invites.doctor_uuid, invites.created_at FROM invites WHERE invites.id = ? LIMIT 1
 `
 
 func (q *Queries) GetInvite(ctx context.Context, id int64) (Invite, error) {

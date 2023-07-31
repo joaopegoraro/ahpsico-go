@@ -72,7 +72,7 @@ func (q *Queries) DeleteAssignment(ctx context.Context, id int64) error {
 
 const getAssignment = `-- name: GetAssignment :one
 
-SELECT assignments.id, assignments.title, assignments.description, assignments.patient_uuid, assignments.doctor_uuid, assignments.session_id, assignments.status, assignments.created_at, assignments.updated_at FROM assignments WHERE id = ?
+SELECT assignments.id, assignments.title, assignments.description, assignments.patient_uuid, assignments.doctor_uuid, assignments.session_id, assignments.status, assignments.created_at, assignments.updated_at FROM assignments WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetAssignment(ctx context.Context, id int64) (Assignment, error) {

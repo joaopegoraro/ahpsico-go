@@ -1,6 +1,6 @@
 -- name: GetAssignment :one
 
-SELECT assignments.* FROM assignments WHERE id = ?;
+SELECT assignments.* FROM assignments WHERE id = ? LIMIT 1;
 
 -- name: ListPatientAssignments :many
 

@@ -1,6 +1,6 @@
 -- name: GetInvite :one
 
-SELECT invites.* FROM invites WHERE invites.id = ?;
+SELECT invites.* FROM invites WHERE invites.id = ? LIMIT 1;
 
 -- name: GetDoctorInviteByPhoneNumber :one
 
@@ -8,7 +8,8 @@ SELECT invites.*
 FROM invites
 WHERE
     invites.doctor_uuid = ?
-    AND invites.phone_number = ?;
+    AND invites.phone_number = ?
+LIMIT 1;
 
 -- name: ListDoctorInvites :many
 

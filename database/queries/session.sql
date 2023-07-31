@@ -46,6 +46,15 @@ FROM sessions s
     JOIN patients p ON patients.uuid = sessions.patient_uuid
 WHERE doctor_uuid = ?;
 
+-- name: ListDoctorActivSessions :many
+
+SELECT *
+FROM sessions
+WHERE
+    doctor_uuid = ?
+    AND status != 2
+    AND status != 3;
+
 -- name: ListDoctorSessionsWithinDate :many
 
 SELECT

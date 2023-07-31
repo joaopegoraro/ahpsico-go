@@ -1,6 +1,6 @@
 -- name: GetAdvice :one
 
-SELECT * FROM advices WHERE id = ?;
+SELECT * FROM advices WHERE id = ? LIMIT 1;
 
 -- name: ListDoctorAdvices :many
 
