@@ -41,4 +41,9 @@ func InitializeRoutes(s *server.Server) {
 	s.Router.Delete("/assignments/{id}", handlers.HandleDeleteAssignment(s))
 	s.Router.Get("/assignments?patientUuid={patientUuid}&pending={pending}", handlers.HandleListPatientAssignments(s))
 	s.Router.Post("/assignments", handlers.HandleCreateAssignment(s))
+
+	s.Router.Delete("/advices/{id}", handlers.HandleDeleteAdvice(s))
+	s.Router.Get("/advices?patientUuid={patientUuid}", handlers.HandleListPatientAdvices(s))
+	s.Router.Get("/advices?doctorUuid={doctorUuid}", handlers.HandleListDoctorAdvices(s))
+	s.Router.Post("/advices", handlers.HandleCreateAdvice(s))
 }
