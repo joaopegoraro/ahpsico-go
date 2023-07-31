@@ -46,7 +46,7 @@ FROM sessions s
     JOIN patients p ON patients.uuid = sessions.patient_uuid
 WHERE doctor_uuid = ?;
 
--- name: ListDoctorActivSessions :many
+-- name: ListDoctorActiveSessions :many
 
 SELECT *
 FROM sessions
@@ -187,7 +187,3 @@ SET
     updated_at = CURRENT_TIMESTAMP
 WHERE
     id = sqlc.arg('id') RETURNING *;
-
--- name: DeleteSession :exec
-
-DELETE FROM sessions where id = ?;

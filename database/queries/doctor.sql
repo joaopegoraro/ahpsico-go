@@ -42,7 +42,3 @@ SET
     updated_at = CURRENT_TIMESTAMP
 WHERE
     uuid = sqlc.arg('uuid') RETURNING *;
-
--- name: DeleteDoctor :exec
-
-DELETE FROM doctors WHERE uuid = ?;

@@ -60,16 +60,6 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 	return i, err
 }
 
-const deleteSession = `-- name: DeleteSession :exec
-
-DELETE FROM sessions where id = ?
-`
-
-func (q *Queries) DeleteSession(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteSession, id)
-	return err
-}
-
 const getDoctorSessionByExactDate = `-- name: GetDoctorSessionByExactDate :one
 
 SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at
@@ -179,7 +169,7 @@ func (q *Queries) GetSessionWithParticipants(ctx context.Context, id int64) (Get
 	return i, err
 }
 
-const listDoctorActivSessions = `-- name: ListDoctorActivSessions :many
+const listDoctorActiveSessions = `-- name: ListDoctorActiveSessions :many
 
 SELECT id, patient_uuid, doctor_uuid, date, group_index, type, status, created_at, updated_at
 FROM sessions
@@ -189,8 +179,8 @@ WHERE
     AND status != 3
 `
 
-func (q *Queries) ListDoctorActivSessions(ctx context.Context, doctorUuid uuid.UUID) ([]Session, error) {
-	rows, err := q.db.QueryContext(ctx, listDoctorActivSessions, doctorUuid)
+func (q *Queries) ListDoctorActiveSessions(ctx context.Context, doctorUuid uuid.UUID) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, listDoctorActiveSessions, doctorUuid)
 	if err != nil {
 		return nil, err
 	}

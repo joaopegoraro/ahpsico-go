@@ -154,69 +154,6 @@ func (q *Queries) ListDoctorInvites(ctx context.Context, doctorUuid uuid.UUID) (
 	return items, nil
 }
 
-const listDoctorInvitesWithPhoneNumber = `-- name: ListDoctorInvitesWithPhoneNumber :many
-
-SELECT
-    invites.id as invite_id,
-    invites.phone_number as invite_phone_number,
-    invites.patient_uuid as invite_patient_uuid,
-    invites.created_at as invite_created_at,
-    doctors.uuid as doctor_uuid,
-    doctors.name as doctor_name,
-    doctors.description as doctor_description
-FROM invites
-    JOIN doctors on doctors.uuid = invites.doctor_uuid
-WHERE
-    invites.doctor_uuid = ?
-    AND invites.phone_number = ?
-`
-
-type ListDoctorInvitesWithPhoneNumberParams struct {
-	DoctorUuid  uuid.UUID
-	PhoneNumber string
-}
-
-type ListDoctorInvitesWithPhoneNumberRow struct {
-	InviteID          int64
-	InvitePhoneNumber string
-	InvitePatientUuid uuid.UUID
-	InviteCreatedAt   time.Time
-	DoctorUuid        uuid.UUID
-	DoctorName        string
-	DoctorDescription string
-}
-
-func (q *Queries) ListDoctorInvitesWithPhoneNumber(ctx context.Context, arg ListDoctorInvitesWithPhoneNumberParams) ([]ListDoctorInvitesWithPhoneNumberRow, error) {
-	rows, err := q.db.QueryContext(ctx, listDoctorInvitesWithPhoneNumber, arg.DoctorUuid, arg.PhoneNumber)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListDoctorInvitesWithPhoneNumberRow
-	for rows.Next() {
-		var i ListDoctorInvitesWithPhoneNumberRow
-		if err := rows.Scan(
-			&i.InviteID,
-			&i.InvitePhoneNumber,
-			&i.InvitePatientUuid,
-			&i.InviteCreatedAt,
-			&i.DoctorUuid,
-			&i.DoctorName,
-			&i.DoctorDescription,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listPatientInvites = `-- name: ListPatientInvites :many
 
 SELECT

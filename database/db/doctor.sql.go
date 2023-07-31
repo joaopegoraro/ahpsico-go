@@ -62,16 +62,6 @@ func (q *Queries) CreateDoctor(ctx context.Context, arg CreateDoctorParams) (Doc
 	return i, err
 }
 
-const deleteDoctor = `-- name: DeleteDoctor :exec
-
-DELETE FROM doctors WHERE uuid = ?
-`
-
-func (q *Queries) DeleteDoctor(ctx context.Context, argUuid uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteDoctor, argUuid)
-	return err
-}
-
 const getDoctor = `-- name: GetDoctor :one
 
 SELECT uuid, name, phone_number, description, crp, pix_key, payment_details, created_at, updated_at FROM doctors WHERE uuid = ? LIMIT 1

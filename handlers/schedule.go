@@ -144,7 +144,7 @@ func HandleListDoctorSchedule(s *server.Server) http.HandlerFunc {
 			})
 		}
 
-		fetchedSessions, err := s.Queries.ListDoctorActivSessions(s.Ctx, doctorUuid)
+		fetchedSessions, err := s.Queries.ListDoctorActiveSessions(s.Ctx, doctorUuid)
 		if err == nil && len(fetchedSessions) > 0 {
 			for _, session := range fetchedSessions {
 				schedule = append(schedule, response{
