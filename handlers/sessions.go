@@ -454,7 +454,8 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 
 		patientUuid, err := uuid.FromString(patientUuidQueryParam)
 		if err != nil || patientUuid == uuid.Nil {
-			s.RespondErrorStatus(w, r, http.StatusNotFound)
+			// TODO
+			s.Respond(w, r, err.Error()+"JAIME", http.StatusNotFound)
 			return
 		}
 
@@ -501,7 +502,9 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 				s.RespondNoContent(w, r)
 				return
 			}
-			s.RespondErrorStatus(w, r, http.StatusNotFound)
+			// TODO
+			s.Respond(w, r, err.Error(), http.StatusNotFound)
+			//s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
 		}
 

@@ -24,7 +24,8 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// TODO REMOVE THIS BLOCK
 			user := AuthUser{
-				UID:         "b0317302-4531-45b1-95c2-c765a2145017",
+				UID: "b0317302-4531-45b1-95c2-c765a2145017",
+				//UID:         "8224f59d-cdab-426d-9c12-b6c662f6abb2",
 				PhoneNumber: "99999999999",
 			}
 			requestContext := context.WithValue(r.Context(), userKeyCaller, user)

@@ -68,7 +68,7 @@ SELECT
     p.name as patient_name,
     p.phone_number as patient_phone_number
 FROM sessions s
-    JOIN patients p ON patients.uuid = s.patient_uuid
+    JOIN patients p ON p.uuid = s.patient_uuid
 WHERE
     s.doctor_uuid = sqlc.arg ('doctor_uuid')
     AND s.date >= sqlc.arg ('start_of_date')
@@ -90,9 +90,9 @@ SELECT
     p.name as patient_name,
     p.phone_number as patient_phone_number
 FROM sessions s
-    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
-    JOIN patients p ON patients.uuid = sessions.patient_uuid
-WHERE patient_uuid = ?;
+    JOIN doctors d ON d.uuid = s.doctor_uuid
+    JOIN patients p ON p.uuid = s.patient_uuid
+WHERE s.patient_uuid = ?;
 
 -- name: ListDoctorPatientSessions :many
 
@@ -110,11 +110,11 @@ SELECT
     p.name as patient_name,
     p.phone_number as patient_phone_number
 FROM sessions s
-    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
-    JOIN patients p ON patients.uuid = sessions.patient_uuid
+    JOIN doctors d ON d.uuid = s.doctor_uuid
+    JOIN patients p ON p.uuid = s.patient_uuid
 WHERE
-    patient_uuid = ?
-    AND doctor_uuid = ?;
+    s.patient_uuid = ?
+    AND s.doctor_uuid = ?;
 
 -- name: ListUpcomingDoctorPatientSessions :many
 
@@ -132,12 +132,12 @@ SELECT
     p.name as patient_name,
     p.phone_number as patient_phone_number
 FROM sessions s
-    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
-    JOIN patients p ON patients.uuid = sessions.patient_uuid
+    JOIN doctors d ON d.uuid = s.doctor_uuid
+    JOIN patients p ON p.uuid = s.patient_uuid
 WHERE
-    patient_uuid = ?
-    AND doctor_uuid = ?
-    AND date >= CURRENT_TIMESTAMP;
+    s.patient_uuid = ?
+    AND s.doctor_uuid = ?
+    AND s.date >= CURRENT_TIMESTAMP;
 
 -- name: ListUpcomingPatientSessions :many
 
@@ -155,11 +155,11 @@ SELECT
     p.name as patient_name,
     p.phone_number as patient_phone_number
 FROM sessions s
-    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
-    JOIN patients p ON patients.uuid = sessions.patient_uuid
+    JOIN doctors d ON d.uuid = s.doctor_uuid
+    JOIN patients p ON p.uuid = s.patient_uuid
 WHERE
-    patient_uuid = ?
-    AND date >= CURRENT_TIMESTAMP;
+    s.patient_uuid = ?
+    AND s.date >= CURRENT_TIMESTAMP;
 
 -- name: CreateSession :one
 
