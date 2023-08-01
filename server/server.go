@@ -30,8 +30,6 @@ type Error struct {
 	//	"status": 400,
 }
 
-const Success = "SUCCESS"
-
 func NewServer() *Server {
 	s := &Server{}
 	return s
@@ -61,6 +59,10 @@ func (s *Server) Respond(w http.ResponseWriter, r *http.Request, data interface{
 	w.Write(jsonData)
 }
 
+func (s *Server) RespondNoContent(w http.ResponseWriter, r *http.Request) {
+	s.Respond(w, r, nil, http.StatusNoContent)
+}
+
 func (s *Server) RespondOk(w http.ResponseWriter, r *http.Request, data interface{}) {
 	if data == nil {
 		s.RespondNoContent(w, r)
@@ -68,10 +70,6 @@ func (s *Server) RespondOk(w http.ResponseWriter, r *http.Request, data interfac
 	}
 
 	s.Respond(w, r, data, http.StatusOK)
-}
-
-func (s *Server) RespondNoContent(w http.ResponseWriter, r *http.Request) {
-	s.Respond(w, r, nil, http.StatusNoContent)
 }
 
 func (s *Server) RespondError(w http.ResponseWriter, r *http.Request, err Error) {
@@ -92,11 +90,11 @@ func (s *Server) RespondErrorStatus(w http.ResponseWriter, r *http.Request, stat
 
 func (s *Server) RespondErrorDetail(w http.ResponseWriter, r *http.Request, detail string, status int) {
 	if strings.TrimSpace(detail) == "" {
-		s.Respond(w, r, nil, status)
+		s.RespondErrorStatus(w, r, status)
 		return
 	}
 
-	s.Respond(w, r, Error{Detail: detail}, status)
+	s.RespondError(w, r, Error{Detail: detail, Status: status})
 }
 
 func (s *Server) Decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
