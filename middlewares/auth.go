@@ -12,7 +12,7 @@ import (
 
 type userKey string
 
-var userKeyCaller = userKey("user")
+var UserKeyCaller = userKey("user")
 
 type AuthUser struct {
 	UID         string
@@ -24,21 +24,14 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			idToken, err := getIdTokenFromRequest(r)
-			if err != nil {
-				RespondAuthError(w, r, s)
-				return
-			}
-
-			// Get the firebase auth client
-			auth, err := s.Firebase.Auth(ctx)
+			idToken, err := GetIdTokenFromRequest(r)
 			if err != nil {
 				RespondAuthError(w, r, s)
 				return
 			}
 
 			// Decodes the token.
-			decodedToken, err := auth.VerifyIDToken(ctx, idToken)
+			decodedToken, err := s.Auth.VerifyIDToken(ctx, idToken)
 			if err != nil {
 				RespondAuthError(w, r, s)
 				return
@@ -46,7 +39,7 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 
 			// Get the uid from the decoded token, then use it to find and return the user object
 			uid := decodedToken.UID
-			userRecord, err := auth.GetUser(ctx, uid)
+			userRecord, err := s.Auth.GetUser(ctx, uid)
 			if err != nil {
 				RespondAuthError(w, r, s)
 				return
@@ -57,13 +50,13 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 				UID:         userRecord.UID,
 				PhoneNumber: userRecord.PhoneNumber,
 			}
-			requestContext := context.WithValue(ctx, userKeyCaller, user)
+			requestContext := context.WithValue(ctx, UserKeyCaller, user)
 			next.ServeHTTP(w, r.WithContext(requestContext))
 		})
 	}
 }
 
-func getIdTokenFromRequest(r *http.Request) (string, error) {
+func GetIdTokenFromRequest(r *http.Request) (string, error) {
 	// Get the authorization Token.
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
@@ -81,7 +74,7 @@ func getIdTokenFromRequest(r *http.Request) (string, error) {
 }
 
 func GetAuthDataFromContext(ctx context.Context) (AuthUser, uuid.UUID, error) {
-	user, ok := ctx.Value(userKeyCaller).(AuthUser)
+	user, ok := ctx.Value(UserKeyCaller).(AuthUser)
 	if ok {
 		userUuid, err := uuid.FromString(user.UID)
 		if err != nil {
