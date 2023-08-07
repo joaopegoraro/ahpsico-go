@@ -7,11 +7,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joaopegoraro/ahpsico-go/database/db"
+	"github.com/twilio/twilio-go"
 )
 
 type Server struct {
 	Router  *chi.Mux
 	Queries *db.Queries
+	Twilio  *twilio.RestClient
 }
 
 type Error struct {

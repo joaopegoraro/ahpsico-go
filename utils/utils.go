@@ -40,7 +40,7 @@ func GenerateJWT(uuid string, phoneNumber string, role int64) (string, error) {
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
-	claims[ExpirationDateClaim] = time.Now().Add(expiration)
+	claims[ExpirationDateClaim] = time.Now().Add(expiration).Format(DateFormat)
 	claims[UuidClaim] = uuid
 	claims[PhoneNumberClaim] = phoneNumber
 	claims[RoleClaim] = role

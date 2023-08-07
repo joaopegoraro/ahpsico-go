@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/golang-jwt/jwt/v5"
@@ -22,6 +23,7 @@ type AuthUser struct {
 	UUID        string
 	PhoneNumber string
 	Role        int64
+	Token       string
 }
 
 func Auth(s *server.Server) func(next http.Handler) http.Handler {
@@ -40,6 +42,8 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 				RespondAuthError(w, r, s)
 				return
 			}
+
+			w.Header().Set("token", user.Token)
 
 			requestContext := context.WithValue(ctx, UserKeyCaller, user)
 			next.ServeHTTP(w, r.WithContext(requestContext))
@@ -77,6 +81,7 @@ func GetTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 }
 
 func GetUserDataFromToken(token *jwt.Token) (AuthUser, error) {
+
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return AuthUser{}, errors.New("invalid claims")
@@ -97,10 +102,33 @@ func GetUserDataFromToken(token *jwt.Token) (AuthUser, error) {
 		return AuthUser{}, errors.New("invalid claims")
 	}
 
+	exp, ok := claims[utils.ExpirationDateClaim].(string)
+	if !ok {
+		return AuthUser{}, errors.New("invalid claims")
+	}
+	expirationDate, err := time.Parse(utils.DateFormat, exp)
+	if err != nil {
+		return AuthUser{}, err
+	}
+
+	if expirationDate.Before(time.Now()) {
+		return AuthUser{}, errors.New("expired token")
+	}
+
+	userToken := token.Raw
+	// if the token will be expired within 7 days, it is renewed
+	if time.Until(expirationDate).Hours() < float64(time.Hour*24*7) {
+		userToken, err = utils.GenerateJWT(uuid, phoneNumber, role)
+		if err != nil {
+			return AuthUser{}, err
+		}
+	}
+
 	return AuthUser{
 		UUID:        uuid,
 		PhoneNumber: phoneNumber,
 		Role:        role,
+		Token:       userToken,
 	}, nil
 
 }
