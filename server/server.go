@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -10,16 +9,9 @@ import (
 	"github.com/joaopegoraro/ahpsico-go/database/db"
 )
 
-type FirebaseAuthenticator interface {
-	VerifyIDToken(ctx context.Context, idToken string) (*firebase_auth.Token, error)
-	GetUser(ctx context.Context, uid string) (*firebase_auth.UserRecord, error)
-}
-
 type Server struct {
-	Router   *chi.Mux
-	Queries  *db.Queries
-	Firebase *firebase.App
-	Auth     FirebaseAuthenticator
+	Router  *chi.Mux
+	Queries *db.Queries
 }
 
 type Error struct {
