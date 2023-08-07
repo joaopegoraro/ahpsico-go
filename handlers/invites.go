@@ -104,7 +104,7 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 
 		_, err = s.Queries.GetUserByRole(ctx, db.GetUserByRoleParams{
 			Uuid: userUuid,
-			Role: doctorRole,
+			Role: middlewares.DoctorRole,
 		})
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusForbidden)

@@ -13,37 +13,45 @@ func InitializeRoutes(s *server.Server) {
 
 	s.Router.Use(middleware.Logger)
 	s.Router.Use(middlewares.Security(s))
-	s.Router.Use(middlewares.Auth(s))
 
+	s.Router.Post("/verification-code", handlers.HandleSendVerificationCode(s))
 	s.Router.Post("/login", handlers.HandleLoginUser(s))
-	s.Router.Post("/register", handlers.HandleRegisterUser(s))
 
-	s.Router.Post("/invites/{id}/accept", handlers.HandleAcceptInvite(s))
-	s.Router.Delete("/invites/{id}", handlers.HandleDeleteInvite(s))
-	s.Router.Get("/invites", handlers.HandleListInvites(s))
-	s.Router.Post("/invites", handlers.HandleCreateInvite(s))
+	s.Router.Route("/signup", func(r chi.Router) {
+		r.Use(middlewares.Auth(s, true))
+		r.Post("/", handlers.HandleCreateUser(s))
+	})
 
-	s.Router.Get("/users/{uuid}", handlers.HandleShowUser(s))
-	s.Router.Put("/users/{uuid}", handlers.HandleUpdateUser(s))
+	s.Router.Route("/", func(r chi.Router) {
+		r.Use(middlewares.Auth(s, false))
 
-	s.Router.Get("/doctors", handlers.HandleListDoctors(s))
-	s.Router.Get("/patients", handlers.HandleListPatients(s))
+		r.Post("/invites/{id}/accept", handlers.HandleAcceptInvite(s))
+		r.Delete("/invites/{id}", handlers.HandleDeleteInvite(s))
+		r.Get("/invites", handlers.HandleListInvites(s))
+		r.Post("/invites", handlers.HandleCreateInvite(s))
 
-	s.Router.Get("/sessions/{id}", handlers.HandleShowSession(s))
-	s.Router.Put("/sessions/{id}", handlers.HandleUpdateSession(s))
-	s.Router.Get("/sessions", handlers.HandleListSessions(s))
-	s.Router.Post("/sessions", handlers.HandleCreateSession(s))
+		r.Get("/users/{uuid}", handlers.HandleShowUser(s))
+		r.Put("/users/{uuid}", handlers.HandleUpdateUser(s))
 
-	s.Router.Put("/assignments/{id}", handlers.HandleUpdateAssignment(s))
-	s.Router.Delete("/assignments/{id}", handlers.HandleDeleteAssignment(s))
-	s.Router.Get("/assignments", handlers.HandleListAssignments(s))
-	s.Router.Post("/assignments", handlers.HandleCreateAssignment(s))
+		r.Get("/doctors", handlers.HandleListDoctors(s))
+		r.Get("/patients", handlers.HandleListPatients(s))
 
-	s.Router.Delete("/advices/{id}", handlers.HandleDeleteAdvice(s))
-	s.Router.Get("/advices", handlers.HandleListAdvices(s))
-	s.Router.Post("/advices", handlers.HandleCreateAdvice(s))
+		r.Get("/sessions/{id}", handlers.HandleShowSession(s))
+		r.Put("/sessions/{id}", handlers.HandleUpdateSession(s))
+		r.Get("/sessions", handlers.HandleListSessions(s))
+		r.Post("/sessions", handlers.HandleCreateSession(s))
 
-	s.Router.Delete("/schedule/{id}", handlers.HandleDeleteSchedule(s))
-	s.Router.Get("/schedule", handlers.HandleListSchedule(s))
-	s.Router.Post("/schedule", handlers.HandleCreateSchedule(s))
+		r.Put("/assignments/{id}", handlers.HandleUpdateAssignment(s))
+		r.Delete("/assignments/{id}", handlers.HandleDeleteAssignment(s))
+		r.Get("/assignments", handlers.HandleListAssignments(s))
+		r.Post("/assignments", handlers.HandleCreateAssignment(s))
+
+		r.Delete("/advices/{id}", handlers.HandleDeleteAdvice(s))
+		r.Get("/advices", handlers.HandleListAdvices(s))
+		r.Post("/advices", handlers.HandleCreateAdvice(s))
+
+		r.Delete("/schedule/{id}", handlers.HandleDeleteSchedule(s))
+		r.Get("/schedule", handlers.HandleListSchedule(s))
+		r.Post("/schedule", handlers.HandleCreateSchedule(s))
+	})
 }

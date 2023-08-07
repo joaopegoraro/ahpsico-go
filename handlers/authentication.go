@@ -2,63 +2,47 @@ package handlers
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
-	"github.com/joaopegoraro/ahpsico-go/database/db"
+	"github.com/gofrs/uuid"
 	"github.com/joaopegoraro/ahpsico-go/middlewares"
 	"github.com/joaopegoraro/ahpsico-go/server"
+	"github.com/joaopegoraro/ahpsico-go/utils"
+
+	openapi "github.com/twilio/twilio-go/rest/verify/v2"
 )
 
-func HandleLoginUser(s *server.Server) http.HandlerFunc {
-	type response struct {
-		UserUuid    string `json:"userUuid"`
-		UserName    string `json:"userName"`
+func HandleSendVerificationCode(s *server.Server) http.HandlerFunc {
+	type request struct {
 		PhoneNumber string `json:"phoneNumber"`
-		IsDoctor    bool   `json:"isDoctor"`
-	}
-	var signUpRequiredError = server.Error{
-		Type:   "signup_required",
-		Detail: "The user is not yet registered in the app",
-		Status: http.StatusNotAcceptable,
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		user, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
-		if err != nil {
-			middlewares.RespondAuthError(w, r, s)
+		var phoneRequest request
+		err := s.Decode(w, r, &phoneRequest)
+		if err != nil || strings.TrimSpace(phoneRequest.PhoneNumber) == "" {
+			s.RespondErrorStatus(w, r, http.StatusBadRequest)
 			return
 		}
 
-		response := response{
-			UserUuid:    userUuid.String(),
-			UserName:    "",
-			PhoneNumber: user.PhoneNumber,
-			IsDoctor:    true,
-		}
+		params := &openapi.CreateVerificationParams{}
+		params.SetTo(phoneRequest.PhoneNumber)
+		params.SetChannel("sms")
 
-		doctor, err := s.Queries.GetDoctor(ctx, userUuid)
+		_, err = s.Twilio.VerifyV2.CreateVerification(os.Getenv("TWILIO_VERIFY_SERVICE_SID"), params)
 		if err != nil {
-			patient, err := s.Queries.GetPatient(ctx, userUuid)
-			if err != nil {
-				s.RespondError(w, r, signUpRequiredError)
-				return
-			}
-			response.IsDoctor = false
-			response.UserName = patient.Name
-			s.RespondOk(w, r, response)
+			s.RespondErrorStatus(w, r, http.StatusBadRequest)
 			return
 		}
 
-		response.UserName = doctor.Name
-		s.RespondOk(w, r, response)
+		s.RespondNoContent(w, r)
 	}
 }
 
-func HandleRegisterUser(s *server.Server) http.HandlerFunc {
+func HandleLoginUser(s *server.Server) http.HandlerFunc {
 	type request struct {
-		UserName string `json:"name"`
-		IsDoctor *bool  `json:"isDoctor"`
+		PhoneNumber string `json:"phoneNumber"`
+		Code        string `json:"code"`
 	}
 	type response struct {
 		Uuid           string `json:"uuid"`
@@ -70,67 +54,73 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 		PaymentDetails string `json:"paymentDetails"`
 		Role           int64  `json:"role"`
 	}
-	var userAlreadyRegisteredError = server.Error{
-		Type:   "user_already_registered",
-		Detail: "The user is already registered in the app",
+	var signUpRequiredError = server.Error{
+		Type:   "signup_required",
+		Detail: "The user is not yet registered in the app",
 		Status: http.StatusNotAcceptable,
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		user, userUuid, err := middlewares.GetAuthDataFromContext(ctx)
-		if err != nil {
-			middlewares.RespondAuthError(w, r, s)
-			return
-		}
-
-		var newUser request
-		err = s.Decode(w, r, &newUser)
+		var loginRequest request
+		err := s.Decode(w, r, &loginRequest)
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusBadRequest)
 			return
 		}
-		if newUser.IsDoctor == nil || strings.TrimSpace(newUser.UserName) == "" {
+		if strings.TrimSpace(loginRequest.PhoneNumber) == "" || strings.TrimSpace(loginRequest.Code) == "" {
 			s.RespondErrorStatus(w, r, http.StatusBadRequest)
 			return
 		}
 
-		_, err = s.Queries.GetUser(ctx, userUuid)
-		if err == nil {
-			s.RespondError(w, r, userAlreadyRegisteredError)
+		params := &openapi.CreateVerificationCheckParams{}
+		params.SetTo(loginRequest.PhoneNumber)
+		params.SetCode(loginRequest.Code)
+
+		resp, err := s.Twilio.VerifyV2.CreateVerificationCheck(os.Getenv("TWILIO_VERIFY_SERVICE_SID"), params)
+
+		if err != nil || *resp.Status != "approved" {
+			s.RespondErrorStatus(w, r, http.StatusBadRequest)
 			return
 		}
 
-		var role int64
-		if *newUser.IsDoctor {
-			role = doctorRole
-		} else {
-			role = patientRole
-		}
-
-		createdUser, err := s.Queries.CreateUser(ctx, db.CreateUserParams{
-			Uuid:        userUuid,
-			Name:        newUser.UserName,
-			PhoneNumber: user.PhoneNumber,
-			Role:        role,
-		})
-
+		user, err := s.Queries.GetUserByPhoneNumber(ctx, loginRequest.PhoneNumber)
 		if err != nil {
-			s.RespondErrorStatus(w, r, http.StatusBadRequest)
+			newUuid, err := uuid.NewV4()
+			if err != nil {
+				s.RespondErrorStatus(w, r, http.StatusInternalServerError)
+				return
+			}
+
+			token, err := utils.GenerateJWT(newUuid.String(), loginRequest.PhoneNumber, middlewares.TemporaryUserRole)
+			if err != nil {
+				s.RespondErrorStatus(w, r, http.StatusInternalServerError)
+				return
+			}
+
+			middlewares.SetTokenHeader(w, token)
+			s.RespondError(w, r, signUpRequiredError)
+			return
+		}
+
+		token, err := utils.GenerateJWT(user.Uuid.String(), user.PhoneNumber, user.Role)
+		if err != nil {
+			s.RespondErrorStatus(w, r, http.StatusInternalServerError)
 			return
 		}
 
 		response := response{
-			Uuid:           createdUser.Uuid.String(),
-			Name:           createdUser.Name,
-			PhoneNumber:    createdUser.PhoneNumber,
-			Description:    createdUser.Description,
-			Crp:            createdUser.Crp,
-			PixKey:         createdUser.PixKey,
-			PaymentDetails: createdUser.PaymentDetails,
-			Role:           createdUser.Role,
+			Uuid:           user.Uuid.String(),
+			Name:           user.Name,
+			PhoneNumber:    user.PhoneNumber,
+			Description:    user.Description,
+			Crp:            user.Crp,
+			PixKey:         user.PixKey,
+			PaymentDetails: user.PaymentDetails,
+			Role:           user.Role,
 		}
 
-		s.Respond(w, r, response, http.StatusCreated)
+		middlewares.SetTokenHeader(w, token)
+		s.RespondOk(w, r, response)
 	}
 }

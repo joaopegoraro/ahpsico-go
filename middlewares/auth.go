@@ -15,6 +15,17 @@ import (
 	"github.com/joaopegoraro/ahpsico-go/utils"
 )
 
+const (
+	TemporaryUserRole = iota
+	PatientRole
+	DoctorRole
+)
+
+const (
+	FirstUserRole = PatientRole
+	LastUserRole  = TemporaryUserRole
+)
+
 type userKey string
 
 var UserKeyCaller = userKey("user")
@@ -26,7 +37,7 @@ type AuthUser struct {
 	Token       string
 }
 
-func Auth(s *server.Server) func(next http.Handler) http.Handler {
+func Auth(s *server.Server, allowTemporaryUserAccess bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -43,7 +54,12 @@ func Auth(s *server.Server) func(next http.Handler) http.Handler {
 				return
 			}
 
-			w.Header().Set("token", user.Token)
+			if !allowTemporaryUserAccess && user.Role == TemporaryUserRole {
+				RespondAuthError(w, r, s)
+				return
+			}
+
+			SetTokenHeader(w, user.Token)
 
 			requestContext := context.WithValue(ctx, UserKeyCaller, user)
 			next.ServeHTTP(w, r.WithContext(requestContext))
@@ -78,6 +94,10 @@ func GetTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+func SetTokenHeader(w http.ResponseWriter, token string) {
+	w.Header().Set("token", token)
 }
 
 func GetUserDataFromToken(token *jwt.Token) (AuthUser, error) {
