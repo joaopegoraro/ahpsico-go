@@ -11,39 +11,13 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-const createPatient = `-- name: CreatePatient :one
-
-INSERT INTO
-    patients (uuid, name, phone_number)
-VALUES (?, ?, ?) RETURNING uuid, name, phone_number, created_at, updated_at
-`
-
-type CreatePatientParams struct {
-	Uuid        uuid.UUID
-	Name        string
-	PhoneNumber string
-}
-
-func (q *Queries) CreatePatient(ctx context.Context, arg CreatePatientParams) (Patient, error) {
-	row := q.db.QueryRowContext(ctx, createPatient, arg.Uuid, arg.Name, arg.PhoneNumber)
-	var i Patient
-	err := row.Scan(
-		&i.Uuid,
-		&i.Name,
-		&i.PhoneNumber,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getDoctorPatientWithUuid = `-- name: GetDoctorPatientWithUuid :one
 
-SELECT patients.uuid, patients.name, patients.phone_number, patients.created_at, patients.updated_at
-FROM patients
-    JOIN patient_with_doctor ON patients.uuid = patient_with_doctor.patient_uuid
+SELECT users.uuid, users.name, users.phone_number, users.description, users.crp, users.pix_key, users.payment_details, users.role, users.created_at, users.updated_at
+FROM users
+    JOIN patient_with_doctor ON users.uuid = patient_with_doctor.patient_uuid
 WHERE
-    patients.uuid = ?
+    users.uuid = ?
     AND patient_with_doctor.doctor_uuid = ?
 LIMIT 1
 `
@@ -53,49 +27,18 @@ type GetDoctorPatientWithUuidParams struct {
 	DoctorUuid uuid.UUID
 }
 
-func (q *Queries) GetDoctorPatientWithUuid(ctx context.Context, arg GetDoctorPatientWithUuidParams) (Patient, error) {
+func (q *Queries) GetDoctorPatientWithUuid(ctx context.Context, arg GetDoctorPatientWithUuidParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, getDoctorPatientWithUuid, arg.Uuid, arg.DoctorUuid)
-	var i Patient
+	var i User
 	err := row.Scan(
 		&i.Uuid,
 		&i.Name,
 		&i.PhoneNumber,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getPatient = `-- name: GetPatient :one
-
-SELECT uuid, name, phone_number, created_at, updated_at FROM patients WHERE uuid = ? LIMIT 1
-`
-
-func (q *Queries) GetPatient(ctx context.Context, argUuid uuid.UUID) (Patient, error) {
-	row := q.db.QueryRowContext(ctx, getPatient, argUuid)
-	var i Patient
-	err := row.Scan(
-		&i.Uuid,
-		&i.Name,
-		&i.PhoneNumber,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getPatientByPhoneNumber = `-- name: GetPatientByPhoneNumber :one
-
-SELECT uuid, name, phone_number, created_at, updated_at FROM patients WHERE phone_number = ? LIMIT 1
-`
-
-func (q *Queries) GetPatientByPhoneNumber(ctx context.Context, phoneNumber string) (Patient, error) {
-	row := q.db.QueryRowContext(ctx, getPatientByPhoneNumber, phoneNumber)
-	var i Patient
-	err := row.Scan(
-		&i.Uuid,
-		&i.Name,
-		&i.PhoneNumber,
+		&i.Description,
+		&i.Crp,
+		&i.PixKey,
+		&i.PaymentDetails,
+		&i.Role,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -104,26 +47,31 @@ func (q *Queries) GetPatientByPhoneNumber(ctx context.Context, phoneNumber strin
 
 const listDoctorPatients = `-- name: ListDoctorPatients :many
 
-SELECT patients.uuid, patients.name, patients.phone_number, patients.created_at, patients.updated_at
-FROM patients
-    JOIN patient_with_doctor ON patients.uuid = patient_with_doctor.patient_uuid
+SELECT users.uuid, users.name, users.phone_number, users.description, users.crp, users.pix_key, users.payment_details, users.role, users.created_at, users.updated_at
+FROM users
+    JOIN patient_with_doctor ON users.uuid = patient_with_doctor.patient_uuid
 WHERE
     patient_with_doctor.doctor_uuid = ?
 `
 
-func (q *Queries) ListDoctorPatients(ctx context.Context, doctorUuid uuid.UUID) ([]Patient, error) {
+func (q *Queries) ListDoctorPatients(ctx context.Context, doctorUuid uuid.UUID) ([]User, error) {
 	rows, err := q.db.QueryContext(ctx, listDoctorPatients, doctorUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Patient
+	var items []User
 	for rows.Next() {
-		var i Patient
+		var i User
 		if err := rows.Scan(
 			&i.Uuid,
 			&i.Name,
 			&i.PhoneNumber,
+			&i.Description,
+			&i.Crp,
+			&i.PixKey,
+			&i.PaymentDetails,
+			&i.Role,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -142,12 +90,12 @@ func (q *Queries) ListDoctorPatients(ctx context.Context, doctorUuid uuid.UUID) 
 
 const listDoctorPatientsByPhoneNumber = `-- name: ListDoctorPatientsByPhoneNumber :many
 
-SELECT patients.uuid, patients.name, patients.phone_number, patients.created_at, patients.updated_at
-FROM patients
-    JOIN patient_with_doctor ON patients.uuid = patient_with_doctor.patient_uuid
+SELECT users.uuid, users.name, users.phone_number, users.description, users.crp, users.pix_key, users.payment_details, users.role, users.created_at, users.updated_at
+FROM users
+    JOIN patient_with_doctor ON users.uuid = patient_with_doctor.patient_uuid
 WHERE
     patient_with_doctor.doctor_uuid = ?
-    AND patients.phone_number = ?
+    AND users.phone_number = ?
 `
 
 type ListDoctorPatientsByPhoneNumberParams struct {
@@ -155,19 +103,24 @@ type ListDoctorPatientsByPhoneNumberParams struct {
 	PhoneNumber string
 }
 
-func (q *Queries) ListDoctorPatientsByPhoneNumber(ctx context.Context, arg ListDoctorPatientsByPhoneNumberParams) ([]Patient, error) {
+func (q *Queries) ListDoctorPatientsByPhoneNumber(ctx context.Context, arg ListDoctorPatientsByPhoneNumberParams) ([]User, error) {
 	rows, err := q.db.QueryContext(ctx, listDoctorPatientsByPhoneNumber, arg.DoctorUuid, arg.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Patient
+	var items []User
 	for rows.Next() {
-		var i Patient
+		var i User
 		if err := rows.Scan(
 			&i.Uuid,
 			&i.Name,
 			&i.PhoneNumber,
+			&i.Description,
+			&i.Crp,
+			&i.PixKey,
+			&i.PaymentDetails,
+			&i.Role,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -182,32 +135,4 @@ func (q *Queries) ListDoctorPatientsByPhoneNumber(ctx context.Context, arg ListD
 		return nil, err
 	}
 	return items, nil
-}
-
-const updatePatient = `-- name: UpdatePatient :one
-
-UPDATE patients
-SET
-    name = ?1,
-    updated_at = CURRENT_TIMESTAMP
-WHERE
-    uuid = ?2 RETURNING uuid, name, phone_number, created_at, updated_at
-`
-
-type UpdatePatientParams struct {
-	Name string
-	Uuid uuid.UUID
-}
-
-func (q *Queries) UpdatePatient(ctx context.Context, arg UpdatePatientParams) (Patient, error) {
-	row := q.db.QueryRowContext(ctx, updatePatient, arg.Name, arg.Uuid)
-	var i Patient
-	err := row.Scan(
-		&i.Uuid,
-		&i.Name,
-		&i.PhoneNumber,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

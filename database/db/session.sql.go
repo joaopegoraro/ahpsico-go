@@ -115,22 +115,22 @@ func (q *Queries) GetSession(ctx context.Context, id int64) (Session, error) {
 const getSessionWithParticipants = `-- name: GetSessionWithParticipants :one
 
 SELECT
-    s.id as session_id,
-    s.date as session_date,
-    s.group_index as session_group_index,
-    s.type as session_type,
-    s.status as session_status,
-    s.created_at as session_created_at,
-    d.uuid as doctor_uuid,
-    d.name as doctor_name,
-    d.description as doctor_description,
-    p.uuid as patient_uuid,
-    p.name as patient_name,
-    p.phone_number as patient_phone_number
-FROM sessions s
-    JOIN doctors d ON doctors.uuid = sessions.doctor_uuid
-    JOIN patients p ON patients.uuid = sessions.patient_uuid
-WHERE id = ?
+    sessions.id as session_id,
+    sessions.date as session_date,
+    sessions.group_index as session_group_index,
+    sessions.type as session_type,
+    sessions.status as session_status,
+    sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
+    patients.uuid as patient_uuid,
+    patients.name as patient_name,
+    patients.phone_number as patient_phone_number
+FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
+    JOIN users as patients ON patients.uuid = sessions.patient_uuid
+WHERE sessions.id = ?
 LIMIT 1
 `
 
@@ -215,24 +215,24 @@ func (q *Queries) ListDoctorActiveSessions(ctx context.Context, doctorUuid uuid.
 const listDoctorPatientSessions = `-- name: ListDoctorPatientSessions :many
 
 SELECT
-    s.id as session_id,
-    s.date as session_date,
-    s.group_index as session_group_index,
-    s.type as session_type,
-    s.status as session_status,
-    s.created_at as session_created_at,
-    d.uuid as doctor_uuid,
-    d.name as doctor_name,
-    d.description as doctor_description,
-    p.uuid as patient_uuid,
-    p.name as patient_name,
-    p.phone_number as patient_phone_number
-FROM sessions s
-    JOIN doctors d ON d.uuid = s.doctor_uuid
-    JOIN patients p ON p.uuid = s.patient_uuid
+    sessions.id as session_id,
+    sessions.date as session_date,
+    sessions.group_index as session_group_index,
+    sessions.type as session_type,
+    sessions.status as session_status,
+    sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
+    patients.uuid as patient_uuid,
+    patients.name as patient_name,
+    patients.phone_number as patient_phone_number
+FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
+    JOIN users as patients ON patients.uuid = sessions.patient_uuid
 WHERE
-    s.patient_uuid = ?
-    AND s.doctor_uuid = ?
+    sessions.patient_uuid = ?
+    AND sessions.doctor_uuid = ?
 `
 
 type ListDoctorPatientSessionsParams struct {
@@ -294,18 +294,18 @@ func (q *Queries) ListDoctorPatientSessions(ctx context.Context, arg ListDoctorP
 const listDoctorSessions = `-- name: ListDoctorSessions :many
 
 SELECT
-    s.id as session_id,
-    s.date as session_date,
-    s.group_index as session_group_index,
-    s.type as session_type,
-    s.status as session_status,
-    s.created_at as session_created_at,
-    p.uuid as patient_uuid,
-    p.name as patient_name,
-    p.phone_number as patient_phone_number
-FROM sessions s
-    JOIN patients p ON patients.uuid = sessions.patient_uuid
-WHERE s.doctor_uuid = ?
+    sessions.id as session_id,
+    sessions.date as session_date,
+    sessions.group_index as session_group_index,
+    sessions.type as session_type,
+    sessions.status as session_status,
+    sessions.created_at as session_created_at,
+    patients.uuid as patient_uuid,
+    patients.name as patient_name,
+    patients.phone_number as patient_phone_number
+FROM sessions
+    JOIN users as patients ON patients.uuid = sessions.patient_uuid
+WHERE sessions.doctor_uuid = ?
 `
 
 type ListDoctorSessionsRow struct {
@@ -356,21 +356,21 @@ func (q *Queries) ListDoctorSessions(ctx context.Context, doctorUuid uuid.UUID) 
 const listDoctorSessionsWithinDate = `-- name: ListDoctorSessionsWithinDate :many
 
 SELECT
-    s.id as session_id,
-    s.date as session_date,
-    s.group_index as session_group_index,
-    s.type as session_type,
-    s.status as session_status,
-    s.created_at as session_created_at,
-    p.uuid as patient_uuid,
-    p.name as patient_name,
-    p.phone_number as patient_phone_number
-FROM sessions s
-    JOIN patients p ON p.uuid = s.patient_uuid
+    sessions.id as session_id,
+    sessions.date as session_date,
+    sessions.group_index as session_group_index,
+    sessions.type as session_type,
+    sessions.status as session_status,
+    sessions.created_at as session_created_at,
+    patients.uuid as patient_uuid,
+    patients.name as patient_name,
+    patients.phone_number as patient_phone_number
+FROM sessions
+    JOIN users as patients ON patients.uuid = sessions.patient_uuid
 WHERE
-    s.doctor_uuid = ?1
-    AND s.date >= ?2
-    AND s.date <= ?3
+    sessions.doctor_uuid = ?1
+    AND sessions.date >= ?2
+    AND sessions.date <= ?3
 `
 
 type ListDoctorSessionsWithinDateParams struct {
@@ -427,22 +427,22 @@ func (q *Queries) ListDoctorSessionsWithinDate(ctx context.Context, arg ListDoct
 const listPatientSessions = `-- name: ListPatientSessions :many
 
 SELECT
-    s.id as session_id,
-    s.date as session_date,
-    s.group_index as session_group_index,
-    s.type as session_type,
-    s.status as session_status,
-    s.created_at as session_created_at,
-    d.uuid as doctor_uuid,
-    d.name as doctor_name,
-    d.description as doctor_description,
-    p.uuid as patient_uuid,
-    p.name as patient_name,
-    p.phone_number as patient_phone_number
-FROM sessions s
-    JOIN doctors d ON d.uuid = s.doctor_uuid
-    JOIN patients p ON p.uuid = s.patient_uuid
-WHERE s.patient_uuid = ?
+    sessions.id as session_id,
+    sessions.date as session_date,
+    sessions.group_index as session_group_index,
+    sessions.type as session_type,
+    sessions.status as session_status,
+    sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
+    patients.uuid as patient_uuid,
+    patients.name as patient_name,
+    patients.phone_number as patient_phone_number
+FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
+    JOIN users as patients ON patients.uuid = sessions.patient_uuid
+WHERE sessions.patient_uuid = ?
 `
 
 type ListPatientSessionsRow struct {
@@ -499,25 +499,25 @@ func (q *Queries) ListPatientSessions(ctx context.Context, patientUuid uuid.UUID
 const listUpcomingDoctorPatientSessions = `-- name: ListUpcomingDoctorPatientSessions :many
 
 SELECT
-    s.id as session_id,
-    s.date as session_date,
-    s.group_index as session_group_index,
-    s.type as session_type,
-    s.status as session_status,
-    s.created_at as session_created_at,
-    d.uuid as doctor_uuid,
-    d.name as doctor_name,
-    d.description as doctor_description,
-    p.uuid as patient_uuid,
-    p.name as patient_name,
-    p.phone_number as patient_phone_number
-FROM sessions s
-    JOIN doctors d ON d.uuid = s.doctor_uuid
-    JOIN patients p ON p.uuid = s.patient_uuid
+    sessions.id as session_id,
+    sessions.date as session_date,
+    sessions.group_index as session_group_index,
+    sessions.type as session_type,
+    sessions.status as session_status,
+    sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
+    patients.uuid as patient_uuid,
+    patients.name as patient_name,
+    patients.phone_number as patient_phone_number
+FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
+    JOIN users as patients ON patients.uuid = sessions.patient_uuid
 WHERE
-    s.patient_uuid = ?
-    AND s.doctor_uuid = ?
-    AND s.date >= CURRENT_TIMESTAMP
+    sessions.patient_uuid = ?
+    AND sessions.doctor_uuid = ?
+    AND sessions.date >= CURRENT_TIMESTAMP
 `
 
 type ListUpcomingDoctorPatientSessionsParams struct {
@@ -579,24 +579,24 @@ func (q *Queries) ListUpcomingDoctorPatientSessions(ctx context.Context, arg Lis
 const listUpcomingPatientSessions = `-- name: ListUpcomingPatientSessions :many
 
 SELECT
-    s.id as session_id,
-    s.date as session_date,
-    s.group_index as session_group_index,
-    s.type as session_type,
-    s.status as session_status,
-    s.created_at as session_created_at,
-    d.uuid as doctor_uuid,
-    d.name as doctor_name,
-    d.description as doctor_description,
-    p.uuid as patient_uuid,
-    p.name as patient_name,
-    p.phone_number as patient_phone_number
-FROM sessions s
-    JOIN doctors d ON d.uuid = s.doctor_uuid
-    JOIN patients p ON p.uuid = s.patient_uuid
+    sessions.id as session_id,
+    sessions.date as session_date,
+    sessions.group_index as session_group_index,
+    sessions.type as session_type,
+    sessions.status as session_status,
+    sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
+    patients.uuid as patient_uuid,
+    patients.name as patient_name,
+    patients.phone_number as patient_phone_number
+FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
+    JOIN users as patients ON patients.uuid = sessions.patient_uuid
 WHERE
-    s.patient_uuid = ?
-    AND s.date >= CURRENT_TIMESTAMP
+    sessions.patient_uuid = ?
+    AND sessions.date >= CURRENT_TIMESTAMP
 `
 
 type ListUpcomingPatientSessionsRow struct {

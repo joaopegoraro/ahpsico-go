@@ -15,10 +15,14 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 		IsDoctor *bool  `json:"isDoctor"`
 	}
 	type response struct {
-		UserUuid    string `json:"userUuid"`
-		UserName    string `json:"userName"`
-		PhoneNumber string `json:"phoneNumber"`
-		IsDoctor    bool   `json:"isDoctor"`
+		Uuid           string `json:"uuid"`
+		Name           string `json:"name"`
+		PhoneNumber    string `json:"phoneNumber"`
+		Description    string `json:"description"`
+		Crp            string `json:"crp"`
+		PixKey         string `json:"pixKey"`
+		PaymentDetails string `json:"paymentDetails"`
+		Role           int64  `json:"role"`
 	}
 	var userAlreadyRegisteredError = server.Error{
 		Type:   "user_already_registered",
@@ -45,30 +49,25 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		_, err = s.Queries.GetDoctor(ctx, userUuid)
-		if err == nil {
-			s.RespondError(w, r, userAlreadyRegisteredError)
-			return
-		}
-		_, err = s.Queries.GetPatient(ctx, userUuid)
+		_, err = s.Queries.GetUser(ctx, userUuid)
 		if err == nil {
 			s.RespondError(w, r, userAlreadyRegisteredError)
 			return
 		}
 
+		var role int64
 		if *newUser.IsDoctor {
-			_, err = s.Queries.CreateDoctor(ctx, db.CreateDoctorParams{
-				Uuid:        userUuid,
-				Name:        newUser.UserName,
-				PhoneNumber: user.PhoneNumber,
-			})
+			role = doctorRole
 		} else {
-			_, err = s.Queries.CreatePatient(ctx, db.CreatePatientParams{
-				Uuid:        userUuid,
-				Name:        newUser.UserName,
-				PhoneNumber: user.PhoneNumber,
-			})
+			role = patientRole
 		}
+
+		createdUser, err := s.Queries.CreateUser(ctx, db.CreateUserParams{
+			Uuid:        userUuid,
+			Name:        newUser.UserName,
+			PhoneNumber: user.PhoneNumber,
+			Role:        role,
+		})
 
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusBadRequest)
@@ -76,10 +75,14 @@ func HandleRegisterUser(s *server.Server) http.HandlerFunc {
 		}
 
 		response := response{
-			UserUuid:    userUuid.String(),
-			UserName:    newUser.UserName,
-			PhoneNumber: user.PhoneNumber,
-			IsDoctor:    *newUser.IsDoctor,
+			Uuid:           createdUser.Uuid.String(),
+			Name:           createdUser.Name,
+			PhoneNumber:    createdUser.PhoneNumber,
+			Description:    createdUser.Description,
+			Crp:            createdUser.Crp,
+			PixKey:         createdUser.PixKey,
+			PaymentDetails: createdUser.PaymentDetails,
+			Role:           createdUser.Role,
 		}
 
 		s.Respond(w, r, response, http.StatusCreated)

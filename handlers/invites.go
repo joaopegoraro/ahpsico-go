@@ -102,7 +102,10 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		_, err = s.Queries.GetDoctor(ctx, userUuid)
+		_, err = s.Queries.GetUserByRole(ctx, db.GetUserByRoleParams{
+			Uuid: userUuid,
+			Role: doctorRole,
+		})
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusForbidden)
 			return
@@ -124,7 +127,7 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		patient, err := s.Queries.GetPatientByPhoneNumber(ctx, newInvite.PhoneNumber)
+		patient, err := s.Queries.GetUserByPhoneNumber(ctx, newInvite.PhoneNumber)
 		if err != nil {
 			s.RespondError(w, r, patientNotRegisteredError)
 			return

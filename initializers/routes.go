@@ -23,12 +23,10 @@ func InitializeRoutes(s *server.Server) {
 	s.Router.Get("/invites", handlers.HandleListInvites(s))
 	s.Router.Post("/invites", handlers.HandleCreateInvite(s))
 
-	s.Router.Get("/doctors/{uuid}", handlers.HandleShowDoctor(s))
-	s.Router.Put("/doctors/{uuid}", handlers.HandleUpdateDoctor(s))
-	s.Router.Get("/doctors", handlers.HandleListDoctors(s))
+	s.Router.Get("/users/{uuid}", handlers.HandleShowUser(s))
+	s.Router.Put("/users/{uuid}", handlers.HandleUpdateUser(s))
 
-	s.Router.Get("/patients/{uuid}", handlers.HandleShowPatient(s))
-	s.Router.Put("/patients/{uuid}", handlers.HandleUpdatePatient(s))
+	s.Router.Get("/doctors", handlers.HandleListDoctors(s))
 	s.Router.Get("/patients", handlers.HandleListPatients(s))
 
 	s.Router.Get("/sessions/{id}", handlers.HandleShowSession(s))

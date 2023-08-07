@@ -16,7 +16,7 @@ SELECT
     doctors.name as doctor_name,
     doctors.description as doctor_description
 FROM assignments
-    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN users as doctors ON doctors.uuid = assignments.doctor_uuid
     JOIN sessions ON sessions.id = assignments.session_id
 WHERE
     assignments.patient_uuid = ?;
@@ -35,7 +35,7 @@ SELECT
     doctors.name as doctor_name,
     doctors.description as doctor_description
 FROM assignments
-    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN users as doctors ON doctors.uuid = assignments.doctor_uuid
     JOIN sessions ON sessions.id = assignments.session_id
 WHERE
     assignments.patient_uuid = ?
@@ -55,7 +55,7 @@ SELECT
     doctors.name as doctor_name,
     doctors.description as doctor_description
 FROM assignments
-    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN users as doctors ON doctors.uuid = assignments.doctor_uuid
     JOIN sessions ON sessions.id = assignments.session_id
 WHERE
     assignments.patient_uuid = ?
@@ -76,7 +76,7 @@ SELECT
     doctors.name as doctor_name,
     doctors.description as doctor_description
 FROM assignments
-    JOIN doctors ON doctors.uuid = assignments.doctor_uuid
+    JOIN users as doctors ON doctors.uuid = assignments.doctor_uuid
     JOIN sessions ON sessions.id = assignments.session_id
 WHERE
     assignments.patient_uuid = ?

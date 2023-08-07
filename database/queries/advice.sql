@@ -13,8 +13,8 @@ SELECT
     doctors.name as doctor_name
 FROM advices
     JOIN advice_with_patient ON advices.id = advice_with_patient.advice_id
-    JOIN doctors ON advices.doctor_uuid = doctors.uuid
-    JOIN patients ON advice_with_patient.patient_uuid = patients.uuid
+    JOIN users as doctors ON advices.doctor_uuid = doctors.uuid
+    JOIN users as patients ON advice_with_patient.patient_uuid = patients.uuid
 WHERE advices.doctor_uuid = ?;
 
 -- name: ListPatientAdvices :many
@@ -28,8 +28,8 @@ SELECT
     doctors.name as doctor_name
 FROM advices
     JOIN advice_with_patient ON advices.id = advice_with_patient.advice_id
-    JOIN doctors ON advices.doctor_uuid = doctors.uuid
-    JOIN patients ON advice_with_patient.patient_uuid = patients.uuid
+    JOIN users as doctors ON advices.doctor_uuid = doctors.uuid
+    JOIN users as patients ON advice_with_patient.patient_uuid = patients.uuid
 WHERE
     advice_with_patient.patient_uuid = ?
 GROUP BY advices.id;
@@ -45,8 +45,8 @@ SELECT
     doctors.name as doctor_name
 FROM advices
     JOIN advice_with_patient ON advices.id = advice_with_patient.advice_id
-    JOIN doctors ON advices.doctor_uuid = doctors.uuid
-    JOIN patients ON advice_with_patient.patient_uuid = patients.uuid
+    JOIN users as doctors ON advices.doctor_uuid = doctors.uuid
+    JOIN users as patients ON advice_with_patient.patient_uuid = patients.uuid
 WHERE
     advice_with_patient.patient_uuid = ?
     AND advices.doctor_uuid = ?;

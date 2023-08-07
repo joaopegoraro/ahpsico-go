@@ -22,7 +22,7 @@ SELECT
     doctors.name as doctor_name,
     doctors.description as doctor_description
 FROM invites
-    JOIN doctors on doctors.uuid = invites.doctor_uuid
+    JOIN users as doctors on doctors.uuid = invites.doctor_uuid
 WHERE invites.doctor_uuid = ?;
 
 -- name: ListPatientInvites :many
@@ -36,7 +36,7 @@ SELECT
     doctors.name as doctor_name,
     doctors.description as doctor_description
 FROM invites
-    JOIN doctors on doctors.uuid = invites.doctor_uuid
+    JOIN users as doctors on doctors.uuid = invites.doctor_uuid
 WHERE invites.patient_uuid = ?;
 
 -- name: CreateInvite :one

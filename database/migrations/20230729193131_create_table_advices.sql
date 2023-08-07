@@ -8,7 +8,7 @@ CREATE TABLE
         message TEXT NOT NULL,
         doctor_uuid TEXT NOT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (doctor_uuid) REFERENCES doctors (uuid) ON DELETE CASCADE
+        FOREIGN KEY (doctor_uuid) REFERENCES users (uuid) ON DELETE CASCADE
     );
 
 CREATE TABLE
@@ -18,7 +18,7 @@ CREATE TABLE
         patient_uuid TEXT NOT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (advice_id) REFERENCES advices (id) ON DELETE CASCADE,
-        FOREIGN KEY (patient_uuid) REFERENCES patients (uuid) ON DELETE CASCADE
+        FOREIGN KEY (patient_uuid) REFERENCES users (uuid) ON DELETE CASCADE
     );
 
 -- +goose StatementEnd

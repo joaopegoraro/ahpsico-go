@@ -13,8 +13,8 @@ CREATE TABLE
         status INTEGER NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME,
-        FOREIGN KEY (patient_uuid) REFERENCES patients (uuid) ON DELETE CASCADE,
-        FOREIGN KEY (doctor_uuid) REFERENCES doctors (uuid) ON DELETE CASCADE
+        FOREIGN KEY (patient_uuid) REFERENCES users (uuid) ON DELETE CASCADE,
+        FOREIGN KEY (doctor_uuid) REFERENCES users (uuid) ON DELETE CASCADE
     );
 
 -- +goose StatementEnd

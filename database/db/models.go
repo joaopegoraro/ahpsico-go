@@ -37,32 +37,12 @@ type Assignment struct {
 	UpdatedAt   sql.NullTime
 }
 
-type Doctor struct {
-	Uuid           uuid.UUID
-	Name           string
-	PhoneNumber    string
-	Description    string
-	Crp            string
-	PixKey         string
-	PaymentDetails string
-	CreatedAt      time.Time
-	UpdatedAt      sql.NullTime
-}
-
 type Invite struct {
 	ID          int64
 	PhoneNumber string
 	PatientUuid uuid.UUID
 	DoctorUuid  uuid.UUID
 	CreatedAt   time.Time
-}
-
-type Patient struct {
-	Uuid        uuid.UUID
-	Name        string
-	PhoneNumber string
-	CreatedAt   time.Time
-	UpdatedAt   sql.NullTime
 }
 
 type PatientWithDoctor struct {
@@ -89,4 +69,17 @@ type Session struct {
 	Status      int64
 	CreatedAt   time.Time
 	UpdatedAt   sql.NullTime
+}
+
+type User struct {
+	Uuid           uuid.UUID
+	Name           string
+	PhoneNumber    string
+	Description    string
+	Crp            string
+	PixKey         string
+	PaymentDetails string
+	Role           int64
+	CreatedAt      time.Time
+	UpdatedAt      sql.NullTime
 }

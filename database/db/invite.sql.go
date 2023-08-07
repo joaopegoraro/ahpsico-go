@@ -109,7 +109,7 @@ SELECT
     doctors.name as doctor_name,
     doctors.description as doctor_description
 FROM invites
-    JOIN doctors on doctors.uuid = invites.doctor_uuid
+    JOIN users as doctors on doctors.uuid = invites.doctor_uuid
 WHERE invites.doctor_uuid = ?
 `
 
@@ -165,8 +165,8 @@ SELECT
     doctors.name as doctor_name,
     doctors.description as doctor_description
 FROM invites
-    JOIN doctors on doctors.uuid = invites.doctor_uuid
-WHERE patient_uuid = ?
+    JOIN users as doctors on doctors.uuid = invites.doctor_uuid
+WHERE invites.patient_uuid = ?
 `
 
 type ListPatientInvitesRow struct {

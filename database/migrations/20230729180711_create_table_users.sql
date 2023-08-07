@@ -3,7 +3,7 @@
 -- +goose StatementBegin
 
 CREATE TABLE
-    doctors (
+    users (
         uuid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         phone_number TEXT NOT NULL UNIQUE,
@@ -11,6 +11,7 @@ CREATE TABLE
         crp TEXT DEFAULT '' NOT NULL,
         pix_key TEXT DEFAULT '' NOT NULL,
         payment_details TEXT DEFAULT '' NOT NULL,
+        role INTEGER DEFAULT 0 NOT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME
     );
@@ -21,6 +22,6 @@ CREATE TABLE
 
 -- +goose StatementBegin
 
-DROP TABLE doctors;
+DROP TABLE users;
 
 -- +goose StatementEnd
