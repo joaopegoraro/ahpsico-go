@@ -4,9 +4,7 @@ import (
 	"context"
 	"log"
 
-	firebase "firebase.google.com/go/v4"
 	"github.com/joaopegoraro/ahpsico-go/server"
-	"google.golang.org/api/option"
 )
 
 func InitializeAuth(s *server.Server) {

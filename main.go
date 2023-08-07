@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/joaopegoraro/ahpsico-go/initializers"
 	"github.com/joaopegoraro/ahpsico-go/server"
@@ -11,15 +12,16 @@ import (
 func main() {
 	s := server.NewServer()
 
-	if err := initializers.InitializeDB(s); err != nil {
-		log.Fatal(err)
-	}
-
+	initializers.InitializeEnv()
+	initializers.InitializeDB(s)
 	initializers.InitializeAuth(s)
-
 	initializers.InitializeRoutes(s)
 
-	log.Print("Serving on :8000")
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal()
+	}
 
-	log.Fatal(http.ListenAndServe(":8000", s.Router))
+	log.Printf("Serving on :%s", port)
+	log.Fatal(http.ListenAndServe(port, s.Router))
 }

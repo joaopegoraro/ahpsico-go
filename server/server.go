@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	firebase "firebase.google.com/go/v4"
-	firebase_auth "firebase.google.com/go/v4/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/joaopegoraro/ahpsico-go/database/db"
 )
