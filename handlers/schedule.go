@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -143,11 +142,7 @@ func handleListDoctorSchedule(s *server.Server, doctorUuidQueryParam string) htt
 		}
 
 		fetchedScheduleList, err := s.Queries.ListDoctorSchedule(ctx, doctorUuid)
-		if err != nil || fetchedScheduleList == nil {
-			if err == sql.ErrNoRows {
-				s.RespondNoContent(w, r)
-				return
-			}
+		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
 		}

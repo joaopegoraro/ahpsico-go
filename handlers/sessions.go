@@ -400,11 +400,7 @@ func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) htt
 			}
 		}
 
-		if err != nil || fetchedSessions == nil {
-			if err == sql.ErrNoRows {
-				s.RespondNoContent(w, r)
-				return
-			}
+		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
 		}
@@ -507,14 +503,8 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 			fetchedSessions, err = s.Queries.ListPatientSessions(ctx, patientUuid)
 		}
 
-		if err != nil || fetchedSessions == nil {
-			if err == sql.ErrNoRows {
-				s.RespondNoContent(w, r)
-				return
-			}
-			// TODO
-			s.Respond(w, r, err.Error(), http.StatusNotFound)
-			//s.RespondErrorStatus(w, r, http.StatusNotFound)
+		if err != nil {
+			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
 		}
 

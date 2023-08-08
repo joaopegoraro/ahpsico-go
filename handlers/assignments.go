@@ -341,11 +341,7 @@ func handleListPatientAssignments(s *server.Server, patientUuidQueryParam string
 			fetchedAssignments, err = s.Queries.ListPatientAssignments(ctx, patientUuid)
 		}
 
-		if err != nil || fetchedAssignments == nil {
-			if err == sql.ErrNoRows {
-				s.RespondNoContent(w, r)
-				return
-			}
+		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
 		}

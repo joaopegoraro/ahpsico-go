@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
 	"strings"
 
@@ -54,11 +53,7 @@ func handleListPatientDoctors(s *server.Server, patientUuidQueryParam string) ht
 		}
 
 		fetchedDoctors, err := s.Queries.ListPatientDoctors(ctx, patientUuid)
-		if err != nil || fetchedDoctors == nil {
-			if err == sql.ErrNoRows {
-				s.RespondNoContent(w, r)
-				return
-			}
+		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
 		}
