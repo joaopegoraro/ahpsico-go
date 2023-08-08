@@ -61,6 +61,7 @@ func HandleCreateSchedule(s *server.Server) http.HandlerFunc {
 		ID         int64  `json:"id"`
 		DoctorUuid string `json:"doctorUuid"`
 		Date       string `json:"date"`
+		IsSession  bool   `json:"isSession"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -80,7 +81,8 @@ func HandleCreateSchedule(s *server.Server) http.HandlerFunc {
 
 		doctorUuid, err := uuid.FromString(createdSchedule.DoctorUuid)
 		if err != nil {
-			s.RespondErrorDetail(w, r, "invalid doctor uuid", http.StatusBadRequest)
+			errMessage := fmt.Sprintf("invalid doctor uuid: %s", createdSchedule.DoctorUuid)
+			s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
 			return
 		}
 
@@ -109,6 +111,7 @@ func HandleCreateSchedule(s *server.Server) http.HandlerFunc {
 			ID:         schedule.ID,
 			DoctorUuid: schedule.DoctorUuid.String(),
 			Date:       schedule.Date.Format(utils.DateFormat),
+			IsSession:  false,
 		}, http.StatusCreated)
 	}
 }

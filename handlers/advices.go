@@ -57,9 +57,13 @@ func HandleCreateAdvice(s *server.Server) http.HandlerFunc {
 		Message      string   `json:"message"`
 		PatientUuids []string `json:"patientUuids"`
 	}
+	type doctor struct {
+		Uuid string `json:"uuid"`
+		Name string `json:"name"`
+	}
 	type response struct {
 		ID           int64    `json:"id"`
-		DoctorUuid   string   `json:"doctorUuid"`
+		Doctor       doctor   `json:"doctor"`
 		Message      string   `json:"message"`
 		PatientUuids []string `json:"patientUuids"`
 		CreatedAt    string   `json:"createdAt"`
@@ -133,8 +137,10 @@ func HandleCreateAdvice(s *server.Server) http.HandlerFunc {
 		}
 
 		s.Respond(w, r, response{
-			ID:           advice.ID,
-			DoctorUuid:   advice.DoctorUuid.String(),
+			ID: advice.ID,
+			Doctor: doctor{
+				Uuid: advice.DoctorUuid.String(),
+			},
 			Message:      advice.Message,
 			PatientUuids: createdAdvice.PatientUuids,
 		}, http.StatusCreated)
@@ -235,11 +241,11 @@ func handleListPatientAdvices(s *server.Server, patientUuidQueryParam string) ht
 		Name string `json:"name"`
 	}
 	type response struct {
-		ID          int64  `json:"id"`
-		Doctor      doctor `json:"doctor"`
-		Message     string `json:"message"`
-		PatientUuid string `json:"patientUuid"`
-		CreatedAt   string `json:"createdAt"`
+		ID           int64    `json:"id"`
+		Doctor       doctor   `json:"doctor"`
+		Message      string   `json:"message"`
+		PatientUuids []string `json:"patientUuids"`
+		CreatedAt    string   `json:"createdAt"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -278,9 +284,9 @@ func handleListPatientAdvices(s *server.Server, patientUuidQueryParam string) ht
 		advices := []response{}
 		for _, fetchedAdvice := range fetchedAdvices {
 			advices = append(advices, response{
-				ID:          fetchedAdvice.AdviceID,
-				Message:     fetchedAdvice.AdviceMessage,
-				PatientUuid: patientUuid.String(),
+				ID:           fetchedAdvice.AdviceID,
+				Message:      fetchedAdvice.AdviceMessage,
+				PatientUuids: []string{patientUuid.String()},
 				Doctor: doctor{
 					Uuid: fetchedAdvice.DoctorUuid.String(),
 					Name: fetchedAdvice.DoctorName,

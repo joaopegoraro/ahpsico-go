@@ -70,6 +70,11 @@ func HandleListInvites(s *server.Server) http.HandlerFunc {
 }
 
 func HandleCreateInvite(s *server.Server) http.HandlerFunc {
+	type doctor struct {
+		Uuid        string `json:"uuid"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
 	type request struct {
 		PhoneNumber string `json:"phoneNumber"`
 	}
@@ -77,6 +82,7 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 		ID          int64  `json:"id"`
 		PhoneNumber string `json:"phoneNumber"`
 		PatientUuid string `json:"patientUuid"`
+		Doctor      doctor `json:"doctor"`
 	}
 	var inviteAlreadySentError = server.Error{
 		Type:   "invite_already_sent",
@@ -102,7 +108,7 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		_, err = s.Queries.GetUserByRole(ctx, db.GetUserByRoleParams{
+		user, err := s.Queries.GetUserByRole(ctx, db.GetUserByRoleParams{
 			Uuid: userUuid,
 			Role: middlewares.DoctorRole,
 		})
@@ -155,6 +161,11 @@ func HandleCreateInvite(s *server.Server) http.HandlerFunc {
 			ID:          invite.ID,
 			PhoneNumber: invite.PhoneNumber,
 			PatientUuid: invite.PatientUuid.String(),
+			Doctor: doctor{
+				Uuid:        invite.DoctorUuid.String(),
+				Name:        user.Name,
+				Description: user.Description,
+			},
 		}, http.StatusCreated)
 	}
 }
