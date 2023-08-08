@@ -23,7 +23,7 @@ const (
 
 const (
 	FirstUserRole = PatientRole
-	LastUserRole  = TemporaryUserRole
+	LastUserRole  = DoctorRole
 )
 
 type userKey string
@@ -42,19 +42,22 @@ func Auth(s *server.Server, allowTemporaryUserAccess bool) func(next http.Handle
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			token, err := GetTokenFromRequest(r)
+			token, claims, err := GetTokenFromRequest(r)
 			if err != nil {
+				fmt.Printf("Error: %s", err.Error())
 				RespondAuthError(w, r, s)
 				return
 			}
 
-			user, err := GetUserDataFromToken(token)
+			user, err := GetUserDataFromTokenClaims(token, claims)
 			if err != nil {
+				fmt.Printf("Error: %s", err.Error())
 				RespondAuthError(w, r, s)
 				return
 			}
 
 			if !allowTemporaryUserAccess && user.Role == TemporaryUserRole {
+				fmt.Printf("Error: Temporary access not allowed")
 				RespondAuthError(w, r, s)
 				return
 			}
@@ -67,69 +70,42 @@ func Auth(s *server.Server, allowTemporaryUserAccess bool) func(next http.Handle
 	}
 }
 
-func GetTokenFromRequest(r *http.Request) (*jwt.Token, error) {
+func GetTokenFromRequest(r *http.Request) (*jwt.Token, utils.AuthClaims, error) {
 	// Get the authorization Token.
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		return nil, errors.New("empty auth header")
+		return nil, utils.AuthClaims{}, errors.New("empty auth header")
 	}
 
 	// Removes the 'Bearer' prefix of the token
 	idTokenSlice := strings.Split(authHeader, " ")
 	if len(idTokenSlice) <= 1 {
-		return nil, errors.New("invalid auth header")
+		return nil, utils.AuthClaims{}, errors.New("invalid auth header")
 	}
 
 	headerToken := idTokenSlice[1]
-	token, err := jwt.Parse(headerToken, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodECDSA)
-		if !ok {
-			return nil, fmt.Errorf("there's an error with the signing method")
+	claims := &utils.AuthClaims{}
+	token, err := jwt.ParseWithClaims(headerToken, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return os.Getenv("JWT_SECRET_KEY"), nil
+		key := os.Getenv("JWT_SECRET_KEY")
+		return []byte(key), nil
 	})
 	if err != nil || !token.Valid {
-		return nil, errors.New("invalid auth token")
+		return nil, utils.AuthClaims{}, fmt.Errorf("invalid auth token:\nvalido? %v\n Error: %v\t", token.Valid, err)
 	}
 
-	return token, nil
+	return token, *claims, nil
 }
 
 func SetTokenHeader(w http.ResponseWriter, token string) {
 	w.Header().Set("token", token)
 }
 
-func GetUserDataFromToken(token *jwt.Token) (AuthUser, error) {
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return AuthUser{}, errors.New("invalid claims")
-	}
-
-	uuid, ok := claims[utils.UuidClaim].(string)
-	if !ok {
-		return AuthUser{}, errors.New("invalid claims")
-	}
-
-	phoneNumber, ok := claims[utils.PhoneNumberClaim].(string)
-	if !ok {
-		return AuthUser{}, errors.New("invalid claims")
-	}
-
-	role, ok := claims[utils.RoleClaim].(int64)
-	if !ok {
-		return AuthUser{}, errors.New("invalid claims")
-	}
-
-	exp, ok := claims[utils.ExpirationDateClaim].(string)
-	if !ok {
-		return AuthUser{}, errors.New("invalid claims")
-	}
-	expirationDate, err := time.Parse(utils.DateFormat, exp)
-	if err != nil {
-		return AuthUser{}, err
-	}
+func GetUserDataFromTokenClaims(token *jwt.Token, claims utils.AuthClaims) (AuthUser, error) {
+	expirationDate := claims.RegisteredClaims.ExpiresAt.Time
 
 	if expirationDate.Before(time.Now()) {
 		return AuthUser{}, errors.New("expired token")
@@ -138,16 +114,17 @@ func GetUserDataFromToken(token *jwt.Token) (AuthUser, error) {
 	userToken := token.Raw
 	// if the token will be expired within 7 days, it is renewed
 	if time.Until(expirationDate).Hours() < float64(time.Hour*24*7) {
-		userToken, err = utils.GenerateJWT(uuid, phoneNumber, role)
+		_userToken, err := utils.GenerateJWT(claims.UUID, claims.PhoneNumber, claims.Role)
 		if err != nil {
 			return AuthUser{}, err
 		}
+		userToken = _userToken
 	}
 
 	return AuthUser{
-		UUID:        uuid,
-		PhoneNumber: phoneNumber,
-		Role:        role,
+		UUID:        claims.UUID,
+		PhoneNumber: claims.PhoneNumber,
+		Role:        claims.Role,
 		Token:       userToken,
 	}, nil
 

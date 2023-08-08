@@ -10,7 +10,7 @@ import (
 func InitializeAuth(s *server.Server) {
 	var TWILIO_ACCOUNT_SID string = os.Getenv("TWILIO_ACCOUNT_SID")
 	var TWILIO_AUTH_TOKEN string = os.Getenv("TWILIO_AUTH_TOKEN")
-	s.Twilio =  twilio.NewRestClientWithParams(twilio.ClientParams{
+	s.Twilio = twilio.NewRestClientWithParams(twilio.ClientParams{
 		Username: TWILIO_ACCOUNT_SID,
 		Password: TWILIO_AUTH_TOKEN,
 	})

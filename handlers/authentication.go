@@ -18,6 +18,10 @@ func HandleSendVerificationCode(s *server.Server) http.HandlerFunc {
 		PhoneNumber string `json:"phoneNumber"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO INIT
+		s.RespondNoContent(w, r)
+		return
+		// TODO END
 		var phoneRequest request
 		err := s.Decode(w, r, &phoneRequest)
 		if err != nil || strings.TrimSpace(phoneRequest.PhoneNumber) == "" {
@@ -73,16 +77,17 @@ func HandleLoginUser(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		params := &openapi.CreateVerificationCheckParams{}
-		params.SetTo(loginRequest.PhoneNumber)
-		params.SetCode(loginRequest.Code)
+		// TODO UNCCOMENT
+		//	params := &openapi.CreateVerificationCheckParams{}
+		//	params.SetTo(loginRequest.PhoneNumber)
+		//	params.SetCode(loginRequest.Code)
 
-		resp, err := s.Twilio.VerifyV2.CreateVerificationCheck(os.Getenv("TWILIO_VERIFY_SERVICE_SID"), params)
+		//	resp, err := s.Twilio.VerifyV2.CreateVerificationCheck(os.Getenv("TWILIO_VERIFY_SERVICE_SID"), params)
 
-		if err != nil || *resp.Status != "approved" {
-			s.RespondErrorStatus(w, r, http.StatusBadRequest)
-			return
-		}
+		//	if err != nil || *resp.Status != "approved" {
+		//		s.RespondErrorStatus(w, r, http.StatusBadRequest)
+		//		return
+		//	}
 
 		user, err := s.Queries.GetUserByPhoneNumber(ctx, loginRequest.PhoneNumber)
 		if err != nil {

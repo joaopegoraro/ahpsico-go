@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/joaopegoraro/ahpsico-go/database/db"
 	"github.com/joaopegoraro/ahpsico-go/middlewares"
 	"github.com/joaopegoraro/ahpsico-go/server"
+	"github.com/joaopegoraro/ahpsico-go/utils"
 )
 
 func HandleShowUser(s *server.Server) http.HandlerFunc {
@@ -178,15 +180,24 @@ func HandleCreateUser(s *server.Server) http.HandlerFunc {
 		var newUser request
 		err = s.Decode(w, r, &newUser)
 		if err != nil {
-			s.RespondErrorStatus(w, r, http.StatusBadRequest)
+			s.RespondError(w, r, server.Error{
+				Detail: err.Error(),
+				Status: http.StatusBadRequest,
+			})
 			return
 		}
 		if strings.TrimSpace(newUser.UserName) == "" {
-			s.RespondErrorStatus(w, r, http.StatusBadRequest)
+			s.RespondError(w, r, server.Error{
+				Detail: "Name cannot be blank",
+				Status: http.StatusBadRequest,
+			})
 			return
 		}
 		if newUser.Role < middlewares.FirstUserRole || newUser.Role > middlewares.LastUserRole {
-			s.RespondErrorStatus(w, r, http.StatusBadRequest)
+			s.RespondError(w, r, server.Error{
+				Detail: fmt.Sprintf("Role must be a valid role. Role provided: %d", newUser.Role),
+				Status: http.StatusBadRequest,
+			})
 			return
 		}
 
@@ -204,7 +215,10 @@ func HandleCreateUser(s *server.Server) http.HandlerFunc {
 		})
 
 		if err != nil {
-			s.RespondErrorStatus(w, r, http.StatusBadRequest)
+			s.RespondError(w, r, server.Error{
+				Detail: err.Error(),
+				Status: http.StatusBadRequest,
+			})
 			return
 		}
 
@@ -219,6 +233,13 @@ func HandleCreateUser(s *server.Server) http.HandlerFunc {
 			Role:           createdUser.Role,
 		}
 
+		tokenTeste, erro := utils.GenerateJWT(response.Uuid, response.PhoneNumber, response.Role)
+		if erro != nil {
+			s.RespondErrorStatus(w, r, http.StatusInternalServerError)
+			return
+		}
+
+		middlewares.SetTokenHeader(w, tokenTeste)
 		s.Respond(w, r, response, http.StatusCreated)
 	}
 }
