@@ -36,13 +36,7 @@ func HandleCreateAssignment(s *server.Server) http.HandlerFunc {
 		Status            int64  `json:"status"`
 	}
 	type response struct {
-		ID                int64  `json:"id"`
-		DoctorUuid        string `json:"doctorUuid"`
-		PatientUuid       string `json:"patientUuid"`
-		DeliverySessionID int64  `json:"deliverySessionId"`
-		Title             string `json:"title"`
-		Description       string `json:"description"`
-		Status            int64  `json:"status"`
+		ID int64 `json:"id"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -93,7 +87,7 @@ func HandleCreateAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		assignment, err := s.Queries.CreateAssignment(ctx, db.CreateAssignmentParams{
+		assignmentID, err := s.Queries.CreateAssignment(ctx, db.CreateAssignmentParams{
 			Title:       createdAssignment.Title,
 			Description: createdAssignment.Description,
 			PatientUuid: patientUuid,
@@ -106,15 +100,7 @@ func HandleCreateAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		s.Respond(w, r, response{
-			ID:                assignment.ID,
-			Title:             assignment.Title,
-			Description:       assignment.Description,
-			DoctorUuid:        assignment.DoctorUuid.String(),
-			DeliverySessionID: assignment.SessionID,
-			PatientUuid:       assignment.PatientUuid.String(),
-			Status:            assignment.Status,
-		}, http.StatusCreated)
+		s.Respond(w, r, response{ID: assignmentID}, http.StatusCreated)
 	}
 }
 
@@ -162,13 +148,7 @@ func HandleUpdateAssignment(s *server.Server) http.HandlerFunc {
 		Status      *int64  `json:"status"`
 	}
 	type response struct {
-		ID                int64  `json:"id"`
-		DoctorUuid        string `json:"doctorUuid"`
-		PatientUuid       string `json:"patientUuid"`
-		DeliverySessionID int64  `json:"deliverySessionId"`
-		Title             string `json:"title"`
-		Description       string `json:"description"`
-		Status            int64  `json:"status"`
+		ID int64 `json:"id"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -235,7 +215,7 @@ func HandleUpdateAssignment(s *server.Server) http.HandlerFunc {
 			updateAssignmentParams.Status = sql.NullInt64{Int64: *updatedAssignment.Status, Valid: true}
 		}
 
-		assignment, err := s.Queries.UpdateAssignment(ctx, updateAssignmentParams)
+		updatedAssignmentID, err := s.Queries.UpdateAssignment(ctx, updateAssignmentParams)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				s.RespondErrorStatus(w, r, http.StatusNotFound)
@@ -245,15 +225,7 @@ func HandleUpdateAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		s.RespondOk(w, r, response{
-			ID:                assignment.ID,
-			Title:             assignment.Title,
-			Description:       assignment.Description,
-			DoctorUuid:        assignment.DoctorUuid.String(),
-			DeliverySessionID: assignment.SessionID,
-			PatientUuid:       assignment.PatientUuid.String(),
-			Status:            assignment.Status,
-		})
+		s.RespondOk(w, r, response{ID: updatedAssignmentID})
 	}
 }
 

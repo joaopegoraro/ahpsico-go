@@ -93,7 +93,7 @@ INSERT INTO
         session_id,
         status
     )
-VALUES (?, ?, ?, ?, ?, ?) RETURNING *;
+VALUES (?, ?, ?, ?, ?, ?) RETURNING id;
 
 -- name: UpdateAssignment :one
 
@@ -107,7 +107,7 @@ SET
     status = COALESCE(sqlc.narg ('status'), status),
     updated_at = CURRENT_TIMESTAMP
 WHERE
-    id = sqlc.arg('id') RETURNING *;
+    id = sqlc.arg('id') RETURNING id;
 
 -- name: DeleteAssignment :exec
 

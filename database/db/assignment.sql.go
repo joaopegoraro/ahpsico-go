@@ -24,7 +24,7 @@ INSERT INTO
         session_id,
         status
     )
-VALUES (?, ?, ?, ?, ?, ?) RETURNING id, title, description, patient_uuid, doctor_uuid, session_id, status, created_at, updated_at
+VALUES (?, ?, ?, ?, ?, ?) RETURNING id
 `
 
 type CreateAssignmentParams struct {
@@ -36,7 +36,7 @@ type CreateAssignmentParams struct {
 	Status      int64
 }
 
-func (q *Queries) CreateAssignment(ctx context.Context, arg CreateAssignmentParams) (Assignment, error) {
+func (q *Queries) CreateAssignment(ctx context.Context, arg CreateAssignmentParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createAssignment,
 		arg.Title,
 		arg.Description,
@@ -45,19 +45,9 @@ func (q *Queries) CreateAssignment(ctx context.Context, arg CreateAssignmentPara
 		arg.SessionID,
 		arg.Status,
 	)
-	var i Assignment
-	err := row.Scan(
-		&i.ID,
-		&i.Title,
-		&i.Description,
-		&i.PatientUuid,
-		&i.DoctorUuid,
-		&i.SessionID,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteAssignment = `-- name: DeleteAssignment :exec
@@ -386,7 +376,7 @@ SET
     status = COALESCE(?3, status),
     updated_at = CURRENT_TIMESTAMP
 WHERE
-    id = ?4 RETURNING id, title, description, patient_uuid, doctor_uuid, session_id, status, created_at, updated_at
+    id = ?4 RETURNING id
 `
 
 type UpdateAssignmentParams struct {
@@ -396,24 +386,14 @@ type UpdateAssignmentParams struct {
 	ID          int64
 }
 
-func (q *Queries) UpdateAssignment(ctx context.Context, arg UpdateAssignmentParams) (Assignment, error) {
+func (q *Queries) UpdateAssignment(ctx context.Context, arg UpdateAssignmentParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, updateAssignment,
 		arg.Title,
 		arg.Description,
 		arg.Status,
 		arg.ID,
 	)
-	var i Assignment
-	err := row.Scan(
-		&i.ID,
-		&i.Title,
-		&i.Description,
-		&i.PatientUuid,
-		&i.DoctorUuid,
-		&i.SessionID,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

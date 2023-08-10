@@ -114,13 +114,7 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 		Date        string `json:"date"`
 	}
 	type response struct {
-		ID          int64  `json:"id"`
-		DoctorUuid  string `json:"doctorUuid"`
-		PatientUuid string `json:"patientUuid"`
-		GroupIndex  int64  `json:"groupIndex"`
-		Status      int64  `json:"status"`
-		Type        int64  `json:"type"`
-		Date        string `json:"date"`
+		ID int64 `json:"id"`
 	}
 	var sessionAlreadyBookedError = server.Error{
 		Type:   "session_already_booked",
@@ -187,7 +181,7 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		session, err := s.Queries.CreateSession(ctx, db.CreateSessionParams{
+		sessionID, err := s.Queries.CreateSession(ctx, db.CreateSessionParams{
 			PatientUuid: patientUuid,
 			DoctorUuid:  doctorUuid,
 			Date:        parsedDate,
@@ -200,15 +194,7 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		s.Respond(w, r, response{
-			ID:          session.ID,
-			DoctorUuid:  session.DoctorUuid.String(),
-			PatientUuid: session.PatientUuid.String(),
-			GroupIndex:  session.GroupIndex,
-			Status:      session.Status,
-			Type:        session.Type,
-			Date:        session.Date.Format(utils.DateFormat),
-		}, http.StatusCreated)
+		s.Respond(w, r, response{ID: sessionID}, http.StatusCreated)
 	}
 }
 
@@ -218,13 +204,7 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 		Date   *string `json:"date"`
 	}
 	type response struct {
-		ID          int64  `json:"id"`
-		DoctorUuid  string `json:"doctorUuid"`
-		PatientUuid string `json:"patientUuid"`
-		GroupIndex  int64  `json:"groupIndex"`
-		Status      int64  `json:"status"`
-		Type        int64  `json:"type"`
-		Date        string `json:"date"`
+		ID int64 `json:"id"`
 	}
 	var sessionAlreadyBookedError = server.Error{
 		Type:   "session_already_booked",
@@ -299,7 +279,7 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 			updateSessionParams.Date = sql.NullTime{Time: parsedDate, Valid: true}
 		}
 
-		session, err := s.Queries.UpdateSession(ctx, updateSessionParams)
+		updatedSessionID, err := s.Queries.UpdateSession(ctx, updateSessionParams)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				s.RespondErrorStatus(w, r, http.StatusNotFound)
@@ -309,15 +289,7 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		s.RespondOk(w, r, response{
-			ID:          session.ID,
-			DoctorUuid:  session.DoctorUuid.String(),
-			PatientUuid: session.PatientUuid.String(),
-			GroupIndex:  session.GroupIndex,
-			Status:      session.Status,
-			Type:        session.Type,
-			Date:        session.Date.Format(utils.DateFormat),
-		})
+		s.RespondOk(w, r, response{ID: updatedSessionID})
 	}
 }
 
@@ -340,6 +312,11 @@ func HandleListSessions(s *server.Server) http.HandlerFunc {
 }
 
 func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) http.HandlerFunc {
+	type doctor struct {
+		Uuid        string `json:"uuid"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
 	type patient struct {
 		Uuid        string `json:"uuid"`
 		Name        string `json:"name"`
@@ -347,6 +324,7 @@ func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) htt
 	}
 	type response struct {
 		ID         int64   `json:"id"`
+		Doctor     doctor  `json:"doctor"`
 		Patient    patient `json:"patient"`
 		GroupIndex int64   `json:"groupIndex"`
 		Status     int64   `json:"status"`
@@ -412,6 +390,11 @@ func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) htt
 				Status:     session.SessionStatus,
 				Type:       session.SessionType,
 				Date:       session.SessionDate.Format(utils.DateFormat),
+				Doctor: doctor{
+					Uuid:        session.DoctorUuid.String(),
+					Name:        session.DoctorName,
+					Description: session.DoctorDescription,
+				},
 				Patient: patient{
 					Uuid:        session.PatientUuid.String(),
 					Name:        session.PatientName,

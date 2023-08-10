@@ -39,10 +39,14 @@ SELECT
     sessions.type as session_type,
     sessions.status as session_status,
     sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
     patients.uuid as patient_uuid,
     patients.name as patient_name,
     patients.phone_number as patient_phone_number
 FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
     JOIN users as patients ON patients.uuid = sessions.patient_uuid
 WHERE sessions.doctor_uuid = ?;
 
@@ -64,10 +68,14 @@ SELECT
     sessions.type as session_type,
     sessions.status as session_status,
     sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
     patients.uuid as patient_uuid,
     patients.name as patient_name,
     patients.phone_number as patient_phone_number
 FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
     JOIN users as patients ON patients.uuid = sessions.patient_uuid
 WHERE
     sessions.doctor_uuid = sqlc.arg ('doctor_uuid')
@@ -172,7 +180,7 @@ INSERT INTO
         type,
         status
     )
-VALUES (?, ?, ?, ?, ?, ?) RETURNING *;
+VALUES (?, ?, ?, ?, ?, ?) RETURNING id;
 
 -- name: UpdateSession :one
 
@@ -182,4 +190,4 @@ SET
     status = COALESCE(sqlc.narg ('status'), status),
     updated_at = CURRENT_TIMESTAMP
 WHERE
-    id = sqlc.arg('id') RETURNING *;
+    id = sqlc.arg('id') RETURNING id;

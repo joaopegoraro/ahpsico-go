@@ -24,7 +24,7 @@ INSERT INTO
         type,
         status
     )
-VALUES (?, ?, ?, ?, ?, ?) RETURNING id, patient_uuid, doctor_uuid, date, group_index, type, status, created_at, updated_at
+VALUES (?, ?, ?, ?, ?, ?) RETURNING id
 `
 
 type CreateSessionParams struct {
@@ -36,7 +36,7 @@ type CreateSessionParams struct {
 	Status      int64
 }
 
-func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
+func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createSession,
 		arg.PatientUuid,
 		arg.DoctorUuid,
@@ -45,19 +45,9 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 		arg.Type,
 		arg.Status,
 	)
-	var i Session
-	err := row.Scan(
-		&i.ID,
-		&i.PatientUuid,
-		&i.DoctorUuid,
-		&i.Date,
-		&i.GroupIndex,
-		&i.Type,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getDoctorSessionByExactDate = `-- name: GetDoctorSessionByExactDate :one
@@ -300,10 +290,14 @@ SELECT
     sessions.type as session_type,
     sessions.status as session_status,
     sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
     patients.uuid as patient_uuid,
     patients.name as patient_name,
     patients.phone_number as patient_phone_number
 FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
     JOIN users as patients ON patients.uuid = sessions.patient_uuid
 WHERE sessions.doctor_uuid = ?
 `
@@ -315,6 +309,9 @@ type ListDoctorSessionsRow struct {
 	SessionType        int64
 	SessionStatus      int64
 	SessionCreatedAt   time.Time
+	DoctorUuid         uuid.UUID
+	DoctorName         string
+	DoctorDescription  string
 	PatientUuid        uuid.UUID
 	PatientName        string
 	PatientPhoneNumber string
@@ -336,6 +333,9 @@ func (q *Queries) ListDoctorSessions(ctx context.Context, doctorUuid uuid.UUID) 
 			&i.SessionType,
 			&i.SessionStatus,
 			&i.SessionCreatedAt,
+			&i.DoctorUuid,
+			&i.DoctorName,
+			&i.DoctorDescription,
 			&i.PatientUuid,
 			&i.PatientName,
 			&i.PatientPhoneNumber,
@@ -362,10 +362,14 @@ SELECT
     sessions.type as session_type,
     sessions.status as session_status,
     sessions.created_at as session_created_at,
+    doctors.uuid as doctor_uuid,
+    doctors.name as doctor_name,
+    doctors.description as doctor_description,
     patients.uuid as patient_uuid,
     patients.name as patient_name,
     patients.phone_number as patient_phone_number
 FROM sessions
+    JOIN users as doctors ON doctors.uuid = sessions.doctor_uuid
     JOIN users as patients ON patients.uuid = sessions.patient_uuid
 WHERE
     sessions.doctor_uuid = ?1
@@ -386,6 +390,9 @@ type ListDoctorSessionsWithinDateRow struct {
 	SessionType        int64
 	SessionStatus      int64
 	SessionCreatedAt   time.Time
+	DoctorUuid         uuid.UUID
+	DoctorName         string
+	DoctorDescription  string
 	PatientUuid        uuid.UUID
 	PatientName        string
 	PatientPhoneNumber string
@@ -407,6 +414,9 @@ func (q *Queries) ListDoctorSessionsWithinDate(ctx context.Context, arg ListDoct
 			&i.SessionType,
 			&i.SessionStatus,
 			&i.SessionCreatedAt,
+			&i.DoctorUuid,
+			&i.DoctorName,
+			&i.DoctorDescription,
 			&i.PatientUuid,
 			&i.PatientName,
 			&i.PatientPhoneNumber,
@@ -658,7 +668,7 @@ SET
     status = COALESCE(?2, status),
     updated_at = CURRENT_TIMESTAMP
 WHERE
-    id = ?3 RETURNING id, patient_uuid, doctor_uuid, date, group_index, type, status, created_at, updated_at
+    id = ?3 RETURNING id
 `
 
 type UpdateSessionParams struct {
@@ -667,19 +677,9 @@ type UpdateSessionParams struct {
 	ID     int64
 }
 
-func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) (Session, error) {
+func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, updateSession, arg.Date, arg.Status, arg.ID)
-	var i Session
-	err := row.Scan(
-		&i.ID,
-		&i.PatientUuid,
-		&i.DoctorUuid,
-		&i.Date,
-		&i.GroupIndex,
-		&i.Type,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
