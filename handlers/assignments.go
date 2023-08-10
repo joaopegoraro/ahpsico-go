@@ -172,7 +172,7 @@ func HandleUpdateAssignment(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		savedAssignment, err := s.Queries.GetSession(ctx, int64(assignmentID))
+		savedAssignment, err := s.Queries.GetAssignment(ctx, int64(assignmentID))
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
