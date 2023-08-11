@@ -60,15 +60,16 @@ type Schedule struct {
 }
 
 type Session struct {
-	ID          int64
-	PatientUuid uuid.UUID
-	DoctorUuid  uuid.UUID
-	Date        time.Time
-	GroupIndex  int64
-	Type        int64
-	Status      int64
-	CreatedAt   time.Time
-	UpdatedAt   sql.NullTime
+	ID            int64
+	PatientUuid   uuid.UUID
+	DoctorUuid    uuid.UUID
+	Date          time.Time
+	GroupIndex    int64
+	Type          int64
+	Status        int64
+	PaymentStatus int64
+	CreatedAt     time.Time
+	UpdatedAt     sql.NullTime
 }
 
 type User struct {

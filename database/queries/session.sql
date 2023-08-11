@@ -10,6 +10,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -38,6 +39,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -67,6 +69,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -90,6 +93,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -110,6 +114,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -132,6 +137,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -155,6 +161,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -178,9 +185,10 @@ INSERT INTO
         date,
         group_index,
         type,
-        status
+        status,
+        payment_status
     )
-VALUES (?, ?, ?, ?, ?, ?) RETURNING id;
+VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;
 
 -- name: UpdateSession :one
 
@@ -188,6 +196,10 @@ UPDATE sessions
 SET
     date = COALESCE(sqlc.narg ('date'), date),
     status = COALESCE(sqlc.narg ('status'), status),
+    payment_status = COALESCE(
+        sqlc.narg ('payment_status'),
+        payment_status
+    ),
     updated_at = CURRENT_TIMESTAMP
 WHERE
     id = sqlc.arg('id') RETURNING id;

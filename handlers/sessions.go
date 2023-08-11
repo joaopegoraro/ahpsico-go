@@ -17,16 +17,26 @@ import (
 )
 
 const (
-	notConfirmedStatus int64 = iota
-	confirmedStatus
-	canceledStatus
-	concludedStatus
+	notConfirmedSessionStatus int64 = iota
+	confirmedSessionStatus
+	canceledSessionStatus
+	concludedSessionStatus
 )
 const (
-	firstSessionStatus = notConfirmedStatus
-	_                  = confirmedStatus
-	_                  = canceledStatus
-	lastSessionStatus  = concludedStatus
+	firstSessionStatus = notConfirmedSessionStatus
+	_                  = confirmedSessionStatus
+	_                  = canceledSessionStatus
+	lastSessionStatus  = concludedSessionStatus
+)
+
+const (
+	notPayedSessionPaymentStatus int64 = iota
+	payedSessionPaymentStatus
+)
+
+const (
+	firstSessionPaymentStatus = notPayedSessionPaymentStatus
+	lastSessionPaymentStatus  = payedSessionPaymentStatus
 )
 
 const (
@@ -50,13 +60,14 @@ func HandleShowSession(s *server.Server) http.HandlerFunc {
 		PhoneNumber string `json:"phoneNumber"`
 	}
 	type response struct {
-		ID         int64   `json:"id"`
-		Doctor     doctor  `json:"doctor"`
-		Patient    patient `json:"patient"`
-		GroupIndex int64   `json:"groupIndex"`
-		Status     int64   `json:"status"`
-		Type       int64   `json:"type"`
-		Date       string  `json:"date"`
+		ID            int64   `json:"id"`
+		Doctor        doctor  `json:"doctor"`
+		Patient       patient `json:"patient"`
+		GroupIndex    int64   `json:"groupIndex"`
+		Status        int64   `json:"status"`
+		PaymentStatus int64   `json:"paymentStatus"`
+		Type          int64   `json:"type"`
+		Date          string  `json:"date"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -85,11 +96,12 @@ func HandleShowSession(s *server.Server) http.HandlerFunc {
 		}
 
 		s.RespondOk(w, r, response{
-			ID:         session.SessionID,
-			GroupIndex: session.SessionGroupIndex,
-			Status:     session.SessionStatus,
-			Type:       session.SessionType,
-			Date:       session.SessionDate.Format(utils.DateFormat),
+			ID:            session.SessionID,
+			GroupIndex:    session.SessionGroupIndex,
+			Status:        session.SessionStatus,
+			PaymentStatus: session.SessionPaymentStatus,
+			Type:          session.SessionType,
+			Date:          session.SessionDate.Format(utils.DateFormat),
 			Doctor: doctor{
 				Uuid:        session.DoctorUuid.String(),
 				Name:        session.DoctorName,
@@ -106,12 +118,13 @@ func HandleShowSession(s *server.Server) http.HandlerFunc {
 
 func HandleCreateSession(s *server.Server) http.HandlerFunc {
 	type request struct {
-		DoctorUuid  string `json:"doctorUuid"`
-		PatientUuid string `json:"patientUuid"`
-		GroupIndex  int64  `json:"groupIndex"`
-		Status      int64  `json:"status"`
-		Type        int64  `json:"type"`
-		Date        string `json:"date"`
+		DoctorUuid    string `json:"doctorUuid"`
+		PatientUuid   string `json:"patientUuid"`
+		GroupIndex    int64  `json:"groupIndex"`
+		Status        int64  `json:"status"`
+		PaymentStatus int64  `json:"paymentStatus"`
+		Type          int64  `json:"type"`
+		Date          string `json:"date"`
 	}
 	type response struct {
 		ID int64 `json:"id"`
@@ -182,12 +195,13 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 		}
 
 		sessionID, err := s.Queries.CreateSession(ctx, db.CreateSessionParams{
-			PatientUuid: patientUuid,
-			DoctorUuid:  doctorUuid,
-			Date:        parsedDate,
-			GroupIndex:  createdSession.GroupIndex,
-			Status:      createdSession.Status,
-			Type:        createdSession.Type,
+			PatientUuid:   patientUuid,
+			DoctorUuid:    doctorUuid,
+			Date:          parsedDate,
+			GroupIndex:    createdSession.GroupIndex,
+			Status:        createdSession.Status,
+			PaymentStatus: createdSession.PaymentStatus,
+			Type:          createdSession.Type,
 		})
 		if err != nil {
 			s.RespondErrorStatus(w, r, http.StatusBadRequest)
@@ -200,8 +214,9 @@ func HandleCreateSession(s *server.Server) http.HandlerFunc {
 
 func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 	type request struct {
-		Status *int64  `json:"status"`
-		Date   *string `json:"date"`
+		Status        *int64  `json:"status"`
+		PaymentStatus *int64  `json:"paymentStatus"`
+		Date          *string `json:"date"`
 	}
 	type response struct {
 		ID int64 `json:"id"`
@@ -245,13 +260,23 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 		}
 
 		var updateSessionParams = db.UpdateSessionParams{
-			ID:     int64(sessionId),
-			Status: sql.NullInt64{Valid: false},
-			Date:   sql.NullTime{Valid: false},
+			ID:            int64(sessionId),
+			Status:        sql.NullInt64{Valid: false},
+			PaymentStatus: sql.NullInt64{Valid: false},
+			Date:          sql.NullTime{Valid: false},
 		}
 
 		if updatedSession.Status != nil {
-			if *updatedSession.Status < firstSessionStatus || *updatedSession.Status > lastSessionStatus {
+			if *updatedSession.Status < firstSessionPaymentStatus || *updatedSession.PaymentStatus > lastSessionPaymentStatus {
+				errMessage := fmt.Sprintf("payment status must be between %d and %d", firstSessionPaymentStatus, lastSessionPaymentStatus)
+				s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
+				return
+			}
+			updateSessionParams.PaymentStatus = sql.NullInt64{Int64: *updatedSession.PaymentStatus, Valid: true}
+		}
+
+		if updatedSession.PaymentStatus != nil {
+			if *updatedSession.PaymentStatus < firstSessionStatus || *updatedSession.Status > lastSessionStatus {
 				errMessage := fmt.Sprintf("status must be between %d and %d", firstSessionStatus, lastSessionStatus)
 				s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
 				return
@@ -267,11 +292,11 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 				return
 			}
 
-			_, err = s.Queries.GetDoctorSessionByExactDate(ctx, db.GetDoctorSessionByExactDateParams{
+			savedSessionWithDate, err := s.Queries.GetDoctorSessionByExactDate(ctx, db.GetDoctorSessionByExactDateParams{
 				DoctorUuid: savedSession.DoctorUuid,
 				Date:       parsedDate,
 			})
-			if err == nil {
+			if err == nil && savedSessionWithDate.ID != int64(sessionId) {
 				s.RespondError(w, r, sessionAlreadyBookedError)
 				return
 			}
@@ -323,13 +348,14 @@ func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) htt
 		PhoneNumber string `json:"phoneNumber"`
 	}
 	type response struct {
-		ID         int64   `json:"id"`
-		Doctor     doctor  `json:"doctor"`
-		Patient    patient `json:"patient"`
-		GroupIndex int64   `json:"groupIndex"`
-		Status     int64   `json:"status"`
-		Type       int64   `json:"type"`
-		Date       string  `json:"date"`
+		ID            int64   `json:"id"`
+		Doctor        doctor  `json:"doctor"`
+		Patient       patient `json:"patient"`
+		GroupIndex    int64   `json:"groupIndex"`
+		Status        int64   `json:"status"`
+		PaymentStatus int64   `json:"paymentStatus"`
+		Type          int64   `json:"type"`
+		Date          string  `json:"date"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -385,11 +411,12 @@ func handleListDoctorSessions(s *server.Server, doctorUuidQueryParam string) htt
 
 		for _, session := range fetchedSessions {
 			sessions = append(sessions, response{
-				ID:         session.SessionID,
-				GroupIndex: session.SessionGroupIndex,
-				Status:     session.SessionStatus,
-				Type:       session.SessionType,
-				Date:       session.SessionDate.Format(utils.DateFormat),
+				ID:            session.SessionID,
+				GroupIndex:    session.SessionGroupIndex,
+				Status:        session.SessionStatus,
+				PaymentStatus: session.SessionPaymentStatus,
+				Type:          session.SessionType,
+				Date:          session.SessionDate.Format(utils.DateFormat),
 				Doctor: doctor{
 					Uuid:        session.DoctorUuid.String(),
 					Name:        session.DoctorName,
@@ -424,13 +451,14 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 		PhoneNumber string `json:"phoneNumber"`
 	}
 	type response struct {
-		ID         int64   `json:"id"`
-		Doctor     doctor  `json:"doctor"`
-		Patient    patient `json:"patient"`
-		GroupIndex int64   `json:"groupIndex"`
-		Status     int64   `json:"status"`
-		Type       int64   `json:"type"`
-		Date       string  `json:"date"`
+		ID            int64   `json:"id"`
+		Doctor        doctor  `json:"doctor"`
+		Patient       patient `json:"patient"`
+		GroupIndex    int64   `json:"groupIndex"`
+		Status        int64   `json:"status"`
+		PaymentStatus int64   `json:"paymentStatus"`
+		Type          int64   `json:"type"`
+		Date          string  `json:"date"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -443,8 +471,7 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 
 		patientUuid, err := uuid.FromString(patientUuidQueryParam)
 		if err != nil || patientUuid == uuid.Nil {
-			// TODO
-			s.Respond(w, r, err.Error()+"JAIME", http.StatusNotFound)
+			s.RespondErrorStatus(w, r, http.StatusNotFound)
 			return
 		}
 
@@ -493,11 +520,12 @@ func handleListPatientSessions(s *server.Server, patientUuidQueryParam string) h
 
 		for _, session := range fetchedSessions {
 			sessions = append(sessions, response{
-				ID:         session.SessionID,
-				GroupIndex: session.SessionGroupIndex,
-				Status:     session.SessionStatus,
-				Type:       session.SessionType,
-				Date:       session.SessionDate.Format(utils.DateFormat),
+				ID:            session.SessionID,
+				GroupIndex:    session.SessionGroupIndex,
+				Status:        session.SessionStatus,
+				PaymentStatus: session.SessionPaymentStatus,
+				Type:          session.SessionType,
+				Date:          session.SessionDate.Format(utils.DateFormat),
 				Doctor: doctor{
 					Uuid:        session.DoctorUuid.String(),
 					Name:        session.DoctorName,

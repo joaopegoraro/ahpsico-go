@@ -11,6 +11,7 @@ CREATE TABLE
         group_index INTEGER NOT NULL DEFAULT 0,
         type INTEGER NOT NULL DEFAULT 0,
         status INTEGER NOT NULL DEFAULT 0,
+        payment_status INTEGER NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME,
         FOREIGN KEY (patient_uuid) REFERENCES users (uuid) ON DELETE CASCADE,

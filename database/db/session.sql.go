@@ -22,18 +22,20 @@ INSERT INTO
         date,
         group_index,
         type,
-        status
+        status,
+        payment_status
     )
-VALUES (?, ?, ?, ?, ?, ?) RETURNING id
+VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id
 `
 
 type CreateSessionParams struct {
-	PatientUuid uuid.UUID
-	DoctorUuid  uuid.UUID
-	Date        time.Time
-	GroupIndex  int64
-	Type        int64
-	Status      int64
+	PatientUuid   uuid.UUID
+	DoctorUuid    uuid.UUID
+	Date          time.Time
+	GroupIndex    int64
+	Type          int64
+	Status        int64
+	PaymentStatus int64
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (int64, error) {
@@ -44,6 +46,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (i
 		arg.GroupIndex,
 		arg.Type,
 		arg.Status,
+		arg.PaymentStatus,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -52,7 +55,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (i
 
 const getDoctorSessionByExactDate = `-- name: GetDoctorSessionByExactDate :one
 
-SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.created_at, sessions.updated_at
+SELECT sessions.id, sessions.patient_uuid, sessions.doctor_uuid, sessions.date, sessions.group_index, sessions.type, sessions.status, sessions.payment_status, sessions.created_at, sessions.updated_at
 FROM sessions
 WHERE doctor_uuid = ? AND date = ?
 LIMIT 1
@@ -74,6 +77,7 @@ func (q *Queries) GetDoctorSessionByExactDate(ctx context.Context, arg GetDoctor
 		&i.GroupIndex,
 		&i.Type,
 		&i.Status,
+		&i.PaymentStatus,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -82,7 +86,7 @@ func (q *Queries) GetDoctorSessionByExactDate(ctx context.Context, arg GetDoctor
 
 const getSession = `-- name: GetSession :one
 
-SELECT id, patient_uuid, doctor_uuid, date, group_index, type, status, created_at, updated_at FROM sessions WHERE id = ? LIMIT 1
+SELECT id, patient_uuid, doctor_uuid, date, group_index, type, status, payment_status, created_at, updated_at FROM sessions WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetSession(ctx context.Context, id int64) (Session, error) {
@@ -96,6 +100,7 @@ func (q *Queries) GetSession(ctx context.Context, id int64) (Session, error) {
 		&i.GroupIndex,
 		&i.Type,
 		&i.Status,
+		&i.PaymentStatus,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -110,6 +115,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -125,18 +131,19 @@ LIMIT 1
 `
 
 type GetSessionWithParticipantsRow struct {
-	SessionID          int64
-	SessionDate        time.Time
-	SessionGroupIndex  int64
-	SessionType        int64
-	SessionStatus      int64
-	SessionCreatedAt   time.Time
-	DoctorUuid         uuid.UUID
-	DoctorName         string
-	DoctorDescription  string
-	PatientUuid        uuid.UUID
-	PatientName        string
-	PatientPhoneNumber string
+	SessionID            int64
+	SessionDate          time.Time
+	SessionGroupIndex    int64
+	SessionType          int64
+	SessionStatus        int64
+	SessionPaymentStatus int64
+	SessionCreatedAt     time.Time
+	DoctorUuid           uuid.UUID
+	DoctorName           string
+	DoctorDescription    string
+	PatientUuid          uuid.UUID
+	PatientName          string
+	PatientPhoneNumber   string
 }
 
 func (q *Queries) GetSessionWithParticipants(ctx context.Context, id int64) (GetSessionWithParticipantsRow, error) {
@@ -148,6 +155,7 @@ func (q *Queries) GetSessionWithParticipants(ctx context.Context, id int64) (Get
 		&i.SessionGroupIndex,
 		&i.SessionType,
 		&i.SessionStatus,
+		&i.SessionPaymentStatus,
 		&i.SessionCreatedAt,
 		&i.DoctorUuid,
 		&i.DoctorName,
@@ -161,7 +169,7 @@ func (q *Queries) GetSessionWithParticipants(ctx context.Context, id int64) (Get
 
 const listDoctorActiveSessions = `-- name: ListDoctorActiveSessions :many
 
-SELECT id, patient_uuid, doctor_uuid, date, group_index, type, status, created_at, updated_at
+SELECT id, patient_uuid, doctor_uuid, date, group_index, type, status, payment_status, created_at, updated_at
 FROM sessions
 WHERE
     doctor_uuid = ?
@@ -186,6 +194,7 @@ func (q *Queries) ListDoctorActiveSessions(ctx context.Context, doctorUuid uuid.
 			&i.GroupIndex,
 			&i.Type,
 			&i.Status,
+			&i.PaymentStatus,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -210,6 +219,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -231,18 +241,19 @@ type ListDoctorPatientSessionsParams struct {
 }
 
 type ListDoctorPatientSessionsRow struct {
-	SessionID          int64
-	SessionDate        time.Time
-	SessionGroupIndex  int64
-	SessionType        int64
-	SessionStatus      int64
-	SessionCreatedAt   time.Time
-	DoctorUuid         uuid.UUID
-	DoctorName         string
-	DoctorDescription  string
-	PatientUuid        uuid.UUID
-	PatientName        string
-	PatientPhoneNumber string
+	SessionID            int64
+	SessionDate          time.Time
+	SessionGroupIndex    int64
+	SessionType          int64
+	SessionStatus        int64
+	SessionPaymentStatus int64
+	SessionCreatedAt     time.Time
+	DoctorUuid           uuid.UUID
+	DoctorName           string
+	DoctorDescription    string
+	PatientUuid          uuid.UUID
+	PatientName          string
+	PatientPhoneNumber   string
 }
 
 func (q *Queries) ListDoctorPatientSessions(ctx context.Context, arg ListDoctorPatientSessionsParams) ([]ListDoctorPatientSessionsRow, error) {
@@ -260,6 +271,7 @@ func (q *Queries) ListDoctorPatientSessions(ctx context.Context, arg ListDoctorP
 			&i.SessionGroupIndex,
 			&i.SessionType,
 			&i.SessionStatus,
+			&i.SessionPaymentStatus,
 			&i.SessionCreatedAt,
 			&i.DoctorUuid,
 			&i.DoctorName,
@@ -289,6 +301,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -303,18 +316,19 @@ WHERE sessions.doctor_uuid = ?
 `
 
 type ListDoctorSessionsRow struct {
-	SessionID          int64
-	SessionDate        time.Time
-	SessionGroupIndex  int64
-	SessionType        int64
-	SessionStatus      int64
-	SessionCreatedAt   time.Time
-	DoctorUuid         uuid.UUID
-	DoctorName         string
-	DoctorDescription  string
-	PatientUuid        uuid.UUID
-	PatientName        string
-	PatientPhoneNumber string
+	SessionID            int64
+	SessionDate          time.Time
+	SessionGroupIndex    int64
+	SessionType          int64
+	SessionStatus        int64
+	SessionPaymentStatus int64
+	SessionCreatedAt     time.Time
+	DoctorUuid           uuid.UUID
+	DoctorName           string
+	DoctorDescription    string
+	PatientUuid          uuid.UUID
+	PatientName          string
+	PatientPhoneNumber   string
 }
 
 func (q *Queries) ListDoctorSessions(ctx context.Context, doctorUuid uuid.UUID) ([]ListDoctorSessionsRow, error) {
@@ -332,6 +346,7 @@ func (q *Queries) ListDoctorSessions(ctx context.Context, doctorUuid uuid.UUID) 
 			&i.SessionGroupIndex,
 			&i.SessionType,
 			&i.SessionStatus,
+			&i.SessionPaymentStatus,
 			&i.SessionCreatedAt,
 			&i.DoctorUuid,
 			&i.DoctorName,
@@ -361,6 +376,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -384,18 +400,19 @@ type ListDoctorSessionsWithinDateParams struct {
 }
 
 type ListDoctorSessionsWithinDateRow struct {
-	SessionID          int64
-	SessionDate        time.Time
-	SessionGroupIndex  int64
-	SessionType        int64
-	SessionStatus      int64
-	SessionCreatedAt   time.Time
-	DoctorUuid         uuid.UUID
-	DoctorName         string
-	DoctorDescription  string
-	PatientUuid        uuid.UUID
-	PatientName        string
-	PatientPhoneNumber string
+	SessionID            int64
+	SessionDate          time.Time
+	SessionGroupIndex    int64
+	SessionType          int64
+	SessionStatus        int64
+	SessionPaymentStatus int64
+	SessionCreatedAt     time.Time
+	DoctorUuid           uuid.UUID
+	DoctorName           string
+	DoctorDescription    string
+	PatientUuid          uuid.UUID
+	PatientName          string
+	PatientPhoneNumber   string
 }
 
 func (q *Queries) ListDoctorSessionsWithinDate(ctx context.Context, arg ListDoctorSessionsWithinDateParams) ([]ListDoctorSessionsWithinDateRow, error) {
@@ -413,6 +430,7 @@ func (q *Queries) ListDoctorSessionsWithinDate(ctx context.Context, arg ListDoct
 			&i.SessionGroupIndex,
 			&i.SessionType,
 			&i.SessionStatus,
+			&i.SessionPaymentStatus,
 			&i.SessionCreatedAt,
 			&i.DoctorUuid,
 			&i.DoctorName,
@@ -442,6 +460,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -456,18 +475,19 @@ WHERE sessions.patient_uuid = ?
 `
 
 type ListPatientSessionsRow struct {
-	SessionID          int64
-	SessionDate        time.Time
-	SessionGroupIndex  int64
-	SessionType        int64
-	SessionStatus      int64
-	SessionCreatedAt   time.Time
-	DoctorUuid         uuid.UUID
-	DoctorName         string
-	DoctorDescription  string
-	PatientUuid        uuid.UUID
-	PatientName        string
-	PatientPhoneNumber string
+	SessionID            int64
+	SessionDate          time.Time
+	SessionGroupIndex    int64
+	SessionType          int64
+	SessionStatus        int64
+	SessionPaymentStatus int64
+	SessionCreatedAt     time.Time
+	DoctorUuid           uuid.UUID
+	DoctorName           string
+	DoctorDescription    string
+	PatientUuid          uuid.UUID
+	PatientName          string
+	PatientPhoneNumber   string
 }
 
 func (q *Queries) ListPatientSessions(ctx context.Context, patientUuid uuid.UUID) ([]ListPatientSessionsRow, error) {
@@ -485,6 +505,7 @@ func (q *Queries) ListPatientSessions(ctx context.Context, patientUuid uuid.UUID
 			&i.SessionGroupIndex,
 			&i.SessionType,
 			&i.SessionStatus,
+			&i.SessionPaymentStatus,
 			&i.SessionCreatedAt,
 			&i.DoctorUuid,
 			&i.DoctorName,
@@ -514,6 +535,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -536,18 +558,19 @@ type ListUpcomingDoctorPatientSessionsParams struct {
 }
 
 type ListUpcomingDoctorPatientSessionsRow struct {
-	SessionID          int64
-	SessionDate        time.Time
-	SessionGroupIndex  int64
-	SessionType        int64
-	SessionStatus      int64
-	SessionCreatedAt   time.Time
-	DoctorUuid         uuid.UUID
-	DoctorName         string
-	DoctorDescription  string
-	PatientUuid        uuid.UUID
-	PatientName        string
-	PatientPhoneNumber string
+	SessionID            int64
+	SessionDate          time.Time
+	SessionGroupIndex    int64
+	SessionType          int64
+	SessionStatus        int64
+	SessionPaymentStatus int64
+	SessionCreatedAt     time.Time
+	DoctorUuid           uuid.UUID
+	DoctorName           string
+	DoctorDescription    string
+	PatientUuid          uuid.UUID
+	PatientName          string
+	PatientPhoneNumber   string
 }
 
 func (q *Queries) ListUpcomingDoctorPatientSessions(ctx context.Context, arg ListUpcomingDoctorPatientSessionsParams) ([]ListUpcomingDoctorPatientSessionsRow, error) {
@@ -565,6 +588,7 @@ func (q *Queries) ListUpcomingDoctorPatientSessions(ctx context.Context, arg Lis
 			&i.SessionGroupIndex,
 			&i.SessionType,
 			&i.SessionStatus,
+			&i.SessionPaymentStatus,
 			&i.SessionCreatedAt,
 			&i.DoctorUuid,
 			&i.DoctorName,
@@ -594,6 +618,7 @@ SELECT
     sessions.group_index as session_group_index,
     sessions.type as session_type,
     sessions.status as session_status,
+    sessions.payment_status as session_payment_status,
     sessions.created_at as session_created_at,
     doctors.uuid as doctor_uuid,
     doctors.name as doctor_name,
@@ -610,18 +635,19 @@ WHERE
 `
 
 type ListUpcomingPatientSessionsRow struct {
-	SessionID          int64
-	SessionDate        time.Time
-	SessionGroupIndex  int64
-	SessionType        int64
-	SessionStatus      int64
-	SessionCreatedAt   time.Time
-	DoctorUuid         uuid.UUID
-	DoctorName         string
-	DoctorDescription  string
-	PatientUuid        uuid.UUID
-	PatientName        string
-	PatientPhoneNumber string
+	SessionID            int64
+	SessionDate          time.Time
+	SessionGroupIndex    int64
+	SessionType          int64
+	SessionStatus        int64
+	SessionPaymentStatus int64
+	SessionCreatedAt     time.Time
+	DoctorUuid           uuid.UUID
+	DoctorName           string
+	DoctorDescription    string
+	PatientUuid          uuid.UUID
+	PatientName          string
+	PatientPhoneNumber   string
 }
 
 func (q *Queries) ListUpcomingPatientSessions(ctx context.Context, patientUuid uuid.UUID) ([]ListUpcomingPatientSessionsRow, error) {
@@ -639,6 +665,7 @@ func (q *Queries) ListUpcomingPatientSessions(ctx context.Context, patientUuid u
 			&i.SessionGroupIndex,
 			&i.SessionType,
 			&i.SessionStatus,
+			&i.SessionPaymentStatus,
 			&i.SessionCreatedAt,
 			&i.DoctorUuid,
 			&i.DoctorName,
@@ -666,19 +693,29 @@ UPDATE sessions
 SET
     date = COALESCE(?1, date),
     status = COALESCE(?2, status),
+    payment_status = COALESCE(
+        ?3,
+        payment_status
+    ),
     updated_at = CURRENT_TIMESTAMP
 WHERE
-    id = ?3 RETURNING id
+    id = ?4 RETURNING id
 `
 
 type UpdateSessionParams struct {
-	Date   sql.NullTime
-	Status sql.NullInt64
-	ID     int64
+	Date          sql.NullTime
+	Status        sql.NullInt64
+	PaymentStatus sql.NullInt64
+	ID            int64
 }
 
 func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, updateSession, arg.Date, arg.Status, arg.ID)
+	row := q.db.QueryRowContext(ctx, updateSession,
+		arg.Date,
+		arg.Status,
+		arg.PaymentStatus,
+		arg.ID,
+	)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
