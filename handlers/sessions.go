@@ -267,21 +267,21 @@ func HandleUpdateSession(s *server.Server) http.HandlerFunc {
 		}
 
 		if updatedSession.Status != nil {
+			if *updatedSession.Status < firstSessionStatus || *updatedSession.Status > lastSessionStatus {
+				errMessage := fmt.Sprintf("status must be between %d and %d", firstSessionStatus, lastSessionStatus)
+				s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
+				return
+			}
+			updateSessionParams.Status = sql.NullInt64{Int64: *updatedSession.Status, Valid: true}
+		}
+
+		if updatedSession.PaymentStatus != nil {
 			if *updatedSession.Status < firstSessionPaymentStatus || *updatedSession.PaymentStatus > lastSessionPaymentStatus {
 				errMessage := fmt.Sprintf("payment status must be between %d and %d", firstSessionPaymentStatus, lastSessionPaymentStatus)
 				s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
 				return
 			}
 			updateSessionParams.PaymentStatus = sql.NullInt64{Int64: *updatedSession.PaymentStatus, Valid: true}
-		}
-
-		if updatedSession.PaymentStatus != nil {
-			if *updatedSession.PaymentStatus < firstSessionStatus || *updatedSession.Status > lastSessionStatus {
-				errMessage := fmt.Sprintf("status must be between %d and %d", firstSessionStatus, lastSessionStatus)
-				s.RespondErrorDetail(w, r, errMessage, http.StatusBadRequest)
-				return
-			}
-			updateSessionParams.Status = sql.NullInt64{Int64: *updatedSession.Status, Valid: true}
 		}
 
 		if updatedSession.Date != nil {
