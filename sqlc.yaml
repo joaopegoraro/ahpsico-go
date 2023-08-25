@@ -1,0 +1,12 @@
+version: "2"
+sql:
+  - schema: "database/migrations"
+    queries: "database/queries"
+    engine: "sqlite"
+    gen:
+      go:
+        package: "db"
+        out: "database/db"
+        overrides:
+          - column: "*.*uuid"
+            go_type: "github.com/gofrs/uuid.UUID"
